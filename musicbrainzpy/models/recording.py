@@ -22,3 +22,4 @@ class Recording(MBModel):
     tags: list[Tag] | None = None
     genres: list[Genre] | None = None
     rating: Rating | None = None
+    annotation: str | None = None

@@ -20,3 +20,4 @@ class Instrument(MBModel):
     aliases: list[Alias] | None = None
     tags: list[Tag] | None = None
     genres: list[Genre] | None = None
+    annotation: str | None = None

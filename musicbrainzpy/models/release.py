@@ -106,3 +106,4 @@ class Release(MBModel):
     # Optional inc= fields
     tags: list[Tag] | None = None
     genres: list[Genre] | None = None
+    annotation: str | None = None
