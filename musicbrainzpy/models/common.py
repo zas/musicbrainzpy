@@ -64,8 +64,6 @@ class Alias(MBModel):
     begin: str | None = None
     end: str | None = None
     ended: bool | None = None
-    begin_date: str | None = Field(default=None, alias="begin-date")
-    end_date: str | None = Field(default=None, alias="end-date")
 
 
 class ArtistStub(MBModel):
