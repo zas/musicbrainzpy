@@ -1,4 +1,4 @@
-"""Submit a rating using OAuth2 authentication.
+"""List your private collections using OAuth2 authentication.
 
 On first run, opens the authorization URL and asks for the code.
 Paste the access token if you already have one, or follow the OAuth flow.
@@ -23,12 +23,14 @@ async def main() -> None:
     if token:
         oauth.set_token(token)
     else:
-        url = build_authorization_url(CLIENT_ID, REDIRECT_URI, ["rating"], access_type="offline")
+        url = build_authorization_url(CLIENT_ID, REDIRECT_URI, ["collection"], access_type="offline")
         print(f"\nOpen this URL to authorize:\n{url}\n")
         webbrowser.open(url)
         code = input("Paste the authorization code: ").strip()
         token_obj = await oauth.exchange_code(code)
         print(f"Got access token: {token_obj.access_token[:8]}...")
+
+    username = input("MusicBrainz username: ")
 
     async with MusicBrainzClient(
         "musicbrainzpy-examples",
@@ -36,12 +38,20 @@ async def main() -> None:
         "you@example.com",
         oauth=oauth,
     ) as mb:
-        # Rate "In the Rectory of the Bizarre Reverend" 5 stars
-        await mb.submit_ratings(
-            "musicbrainzpy-examples-0.1.0",
-            {"release-group": {"2775d734-1ede-4e2b-a20e-e754bb98eb09": 100}},
-        )
-        print("Rating submitted!")
+        # List all collections (including private ones, thanks to auth)
+        data = await mb.browse("collection", linked_type="editor", linked_id=username)
+        print(f"\nCollections for {username} ({data['collection-count']} total):\n")
+        for c in data["collections"]:
+            entity = c["entity-type"]
+            count = c.get(f"{entity}-count", 0)
+            print(f"  {c['name']} ({entity}, {count} items)")
+
+        # # Submit a rating (uncomment to try):
+        # await mb.submit_ratings(
+        #     "musicbrainzpy-examples-0.1.0",
+        #     {"release-group": {"2775d734-1ede-4e2b-a20e-e754bb98eb09": 100}},
+        # )
+        # print("Rating submitted!")
 
 
 if __name__ == "__main__":
