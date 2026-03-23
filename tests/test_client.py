@@ -7,8 +7,11 @@ import pytest
 import respx
 
 from musicbrainzpy.client import (
+    BrowseResult,
     MusicBrainzClient,
+    SearchResult,
     _build_user_agent,
+    _get_entity_info,
     _raise_for_status,
 )
 from musicbrainzpy.exceptions import (
@@ -18,6 +21,7 @@ from musicbrainzpy.exceptions import (
     NotFoundError,
     RateLimitedError,
 )
+from musicbrainzpy.models import Artist, Release
 from tests.conftest import (
     ARTIST_LOOKUP_RESPONSE,
     ARTIST_SEARCH_RESPONSE,
@@ -146,3 +150,54 @@ class TestBrowse:
             "release", linked_type="artist", linked_id=artist_id, limit=10, includes=["labels"]
         )
         assert result["releases"][0]["title"] == "Master of Puppets"
+
+
+class TestGetEntityInfo:
+    def test_known_type(self) -> None:
+        model_class, list_key = _get_entity_info("artist")
+        assert model_class is Artist
+        assert list_key == "artists"
+
+    def test_unknown_type(self) -> None:
+        with pytest.raises(ValueError, match="Unknown entity type"):
+            _get_entity_info("nonexistent")
+
+
+class TestLookupTyped:
+    async def test_returns_model(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        mbid = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
+        mock_api.get(f"/artist/{mbid}", params={"fmt": "json"}).mock(
+            return_value=httpx.Response(200, json=ARTIST_LOOKUP_RESPONSE)
+        )
+        result = await client.lookup_typed("artist", mbid)
+        assert isinstance(result, Artist)
+        assert result.name == "Metallica"
+
+
+class TestSearchTyped:
+    async def test_returns_search_result(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        mock_api.get("/artist", params={"fmt": "json", "query": "Metallica", "limit": "25", "offset": "0"}).mock(
+            return_value=httpx.Response(200, json=ARTIST_SEARCH_RESPONSE)
+        )
+        result = await client.search_typed("artist", "Metallica")
+        assert isinstance(result, SearchResult)
+        assert result.count == 1
+        assert result.offset == 0
+        assert len(result.items) == 1
+        assert isinstance(result.items[0], Artist)
+        assert result.items[0].name == "Metallica"
+
+
+class TestBrowseTyped:
+    async def test_returns_browse_result(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        artist_id = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
+        mock_api.get(
+            "/release",
+            params={"fmt": "json", "artist": artist_id, "limit": "25", "offset": "0"},
+        ).mock(return_value=httpx.Response(200, json=RELEASE_BROWSE_RESPONSE))
+        result = await client.browse_typed("release", linked_type="artist", linked_id=artist_id)
+        assert isinstance(result, BrowseResult)
+        assert result.count == 1
+        assert len(result.items) == 1
+        assert isinstance(result.items[0], Release)
+        assert result.items[0].title == "Master of Puppets"
