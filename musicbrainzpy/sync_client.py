@@ -58,10 +58,7 @@ class SyncMusicBrainzClient:
         """Perform a rate-limited GET request and return parsed JSON."""
         self._rate_limiter.acquire()
         url = self._base_url + path
-        all_params = {"fmt": "json"}
-        if params:
-            all_params.update(params)
-        response = self._client.get(url, params=all_params)
+        response = self._client.get(url, params=params)
         _raise_for_status(response)
         return response.json()
 

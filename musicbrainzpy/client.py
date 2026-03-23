@@ -187,10 +187,7 @@ class MusicBrainzClient:
         """Perform a rate-limited GET request and return parsed JSON."""
         await self._rate_limiter.acquire()
         url = self._base_url + path
-        all_params = {"fmt": "json"}
-        if params:
-            all_params.update(params)
-        response = await self._client.get(url, params=all_params)
+        response = await self._client.get(url, params=params)
         _raise_for_status(response)
         return response.json()
 
@@ -199,10 +196,7 @@ class MusicBrainzClient:
         auth_kwargs = await self._get_auth_kwargs()
         await self._rate_limiter.acquire()
         url = self._base_url + path
-        all_params = {"fmt": "json"}
-        if params:
-            all_params.update(params)
-        response = await self._client.get(url, params=all_params, **auth_kwargs)
+        response = await self._client.get(url, params=params, **auth_kwargs)
         _raise_for_status(response)
         return response.json()
 
@@ -220,14 +214,13 @@ class MusicBrainzClient:
         auth_kwargs = await self._get_auth_kwargs()
         await self._rate_limiter.acquire()
         url = self._base_url + path
-        all_params = {"fmt": "json", **params}
         headers: dict[str, str] = {"Content-Type": "application/xml; charset=utf-8"}
         # Merge bearer token header if using OAuth2
         if "headers" in auth_kwargs:
             headers.update(auth_kwargs["headers"])
         response = await self._client.post(
             url,
-            params=all_params,
+            params=params,
             content=body,
             headers=headers,
             auth=auth_kwargs.get("auth"),  # type: ignore[arg-type]

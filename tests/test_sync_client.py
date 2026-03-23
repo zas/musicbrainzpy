@@ -14,7 +14,7 @@ class TestSyncClient:
     def test_lookup(self) -> None:
         with respx.mock(base_url="https://musicbrainz.org/ws/2") as mock_api:
             mbid = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
-            mock_api.get(f"/artist/{mbid}", params={"fmt": "json"}).mock(
+            mock_api.get(f"/artist/{mbid}", params={}).mock(
                 return_value=httpx.Response(200, json=ARTIST_LOOKUP_RESPONSE)
             )
             with SyncMusicBrainzClient("test", "0.1", "test@example.com", rate_limit=0) as c:
@@ -24,7 +24,7 @@ class TestSyncClient:
     def test_lookup_typed(self) -> None:
         with respx.mock(base_url="https://musicbrainz.org/ws/2") as mock_api:
             mbid = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
-            mock_api.get(f"/artist/{mbid}", params={"fmt": "json"}).mock(
+            mock_api.get(f"/artist/{mbid}", params={}).mock(
                 return_value=httpx.Response(200, json=ARTIST_LOOKUP_RESPONSE)
             )
             with SyncMusicBrainzClient("test", "0.1", "test@example.com", rate_limit=0) as c:
@@ -34,7 +34,7 @@ class TestSyncClient:
 
     def test_search_typed(self) -> None:
         with respx.mock(base_url="https://musicbrainz.org/ws/2") as mock_api:
-            mock_api.get("/artist", params={"fmt": "json", "query": "Metallica", "limit": "25", "offset": "0"}).mock(
+            mock_api.get("/artist", params={"query": "Metallica", "limit": "25", "offset": "0"}).mock(
                 return_value=httpx.Response(200, json=ARTIST_SEARCH_RESPONSE)
             )
             with SyncMusicBrainzClient("test", "0.1", "test@example.com", rate_limit=0) as c:

@@ -93,16 +93,14 @@ class TestClientInit:
 class TestLookup:
     async def test_lookup_artist(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
         mbid = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
-        mock_api.get(f"/artist/{mbid}", params={"fmt": "json"}).mock(
-            return_value=httpx.Response(200, json=ARTIST_LOOKUP_RESPONSE)
-        )
+        mock_api.get(f"/artist/{mbid}", params={}).mock(return_value=httpx.Response(200, json=ARTIST_LOOKUP_RESPONSE))
         result = await client.lookup("artist", mbid)
         assert result["name"] == "Metallica"
         assert result["id"] == mbid
 
     async def test_lookup_with_includes(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
         mbid = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
-        mock_api.get(f"/artist/{mbid}", params={"fmt": "json", "inc": "releases+tags"}).mock(
+        mock_api.get(f"/artist/{mbid}", params={"inc": "releases+tags"}).mock(
             return_value=httpx.Response(200, json=ARTIST_LOOKUP_RESPONSE)
         )
         result = await client.lookup("artist", mbid, includes=["releases", "tags"])
@@ -110,14 +108,14 @@ class TestLookup:
 
     async def test_lookup_not_found(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
         mbid = "00000000-0000-0000-0000-000000000000"
-        mock_api.get(f"/artist/{mbid}", params={"fmt": "json"}).mock(return_value=httpx.Response(404, text="Not Found"))
+        mock_api.get(f"/artist/{mbid}", params={}).mock(return_value=httpx.Response(404, text="Not Found"))
         with pytest.raises(NotFoundError):
             await client.lookup("artist", mbid)
 
 
 class TestSearch:
     async def test_search_artists(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
-        mock_api.get("/artist", params={"fmt": "json", "query": "Metallica", "limit": "25", "offset": "0"}).mock(
+        mock_api.get("/artist", params={"query": "Metallica", "limit": "25", "offset": "0"}).mock(
             return_value=httpx.Response(200, json=ARTIST_SEARCH_RESPONSE)
         )
         result = await client.search("artist", "Metallica")
@@ -125,7 +123,7 @@ class TestSearch:
         assert result["artists"][0]["name"] == "Metallica"
 
     async def test_search_with_paging(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
-        mock_api.get("/artist", params={"fmt": "json", "query": "rock", "limit": "10", "offset": "5"}).mock(
+        mock_api.get("/artist", params={"query": "rock", "limit": "10", "offset": "5"}).mock(
             return_value=httpx.Response(200, json=ARTIST_SEARCH_RESPONSE)
         )
         result = await client.search("artist", "rock", limit=10, offset=5)
@@ -137,7 +135,7 @@ class TestBrowse:
         artist_id = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
         mock_api.get(
             "/release",
-            params={"fmt": "json", "artist": artist_id, "limit": "25", "offset": "0"},
+            params={"artist": artist_id, "limit": "25", "offset": "0"},
         ).mock(return_value=httpx.Response(200, json=RELEASE_BROWSE_RESPONSE))
         result = await client.browse("release", linked_type="artist", linked_id=artist_id)
         assert result["release-count"] == 1
@@ -147,7 +145,7 @@ class TestBrowse:
         artist_id = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
         mock_api.get(
             "/release",
-            params={"fmt": "json", "artist": artist_id, "limit": "10", "offset": "0", "inc": "labels"},
+            params={"artist": artist_id, "limit": "10", "offset": "0", "inc": "labels"},
         ).mock(return_value=httpx.Response(200, json=RELEASE_BROWSE_RESPONSE))
         result = await client.browse(
             "release", linked_type="artist", linked_id=artist_id, limit=10, includes=["labels"]
@@ -169,9 +167,7 @@ class TestGetEntityInfo:
 class TestLookupTyped:
     async def test_returns_model(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
         mbid = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
-        mock_api.get(f"/artist/{mbid}", params={"fmt": "json"}).mock(
-            return_value=httpx.Response(200, json=ARTIST_LOOKUP_RESPONSE)
-        )
+        mock_api.get(f"/artist/{mbid}", params={}).mock(return_value=httpx.Response(200, json=ARTIST_LOOKUP_RESPONSE))
         result = await client.lookup_typed("artist", mbid)
         assert isinstance(result, Artist)
         assert result.name == "Metallica"
@@ -179,7 +175,7 @@ class TestLookupTyped:
 
 class TestSearchTyped:
     async def test_returns_search_result(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
-        mock_api.get("/artist", params={"fmt": "json", "query": "Metallica", "limit": "25", "offset": "0"}).mock(
+        mock_api.get("/artist", params={"query": "Metallica", "limit": "25", "offset": "0"}).mock(
             return_value=httpx.Response(200, json=ARTIST_SEARCH_RESPONSE)
         )
         result = await client.search_typed("artist", "Metallica")
@@ -196,7 +192,7 @@ class TestBrowseTyped:
         artist_id = "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab"
         mock_api.get(
             "/release",
-            params={"fmt": "json", "artist": artist_id, "limit": "25", "offset": "0"},
+            params={"artist": artist_id, "limit": "25", "offset": "0"},
         ).mock(return_value=httpx.Response(200, json=RELEASE_BROWSE_RESPONSE))
         result = await client.browse_typed("release", linked_type="artist", linked_id=artist_id)
         assert isinstance(result, BrowseResult)
@@ -208,9 +204,7 @@ class TestBrowseTyped:
 
 class TestLookupByIsrc:
     async def test_returns_recordings(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
-        mock_api.get("/isrc/USEE10100063", params={"fmt": "json"}).mock(
-            return_value=httpx.Response(200, json=ISRC_LOOKUP_RESPONSE)
-        )
+        mock_api.get("/isrc/USEE10100063", params={}).mock(return_value=httpx.Response(200, json=ISRC_LOOKUP_RESPONSE))
         results = await client.lookup_by_isrc("USEE10100063")
         assert len(results) == 1
         assert isinstance(results[0], Recording)
@@ -219,7 +213,7 @@ class TestLookupByIsrc:
 
 class TestLookupByIswc:
     async def test_returns_works(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
-        mock_api.get("/iswc/T-070.116.274-5", params={"fmt": "json"}).mock(
+        mock_api.get("/iswc/T-070.116.274-5", params={}).mock(
             return_value=httpx.Response(200, json=ISWC_LOOKUP_RESPONSE)
         )
         results = await client.lookup_by_iswc("T-070.116.274-5")
@@ -231,16 +225,14 @@ class TestLookupByIswc:
 class TestLookupByDiscid:
     async def test_returns_releases(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
         discid = "I5l9cCSFccLKFEKS.7wqSZAorPU-"
-        mock_api.get(f"/discid/{discid}", params={"fmt": "json"}).mock(
-            return_value=httpx.Response(200, json=DISCID_LOOKUP_RESPONSE)
-        )
+        mock_api.get(f"/discid/{discid}", params={}).mock(return_value=httpx.Response(200, json=DISCID_LOOKUP_RESPONSE))
         results = await client.lookup_by_discid(discid)
         assert len(results) == 1
         assert isinstance(results[0], Release)
         assert results[0].title == "Metallica"
 
     async def test_with_toc(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
-        mock_api.get("/discid/-", params={"fmt": "json", "toc": "1+12+267257+150", "cdstubs": "no"}).mock(
+        mock_api.get("/discid/-", params={"toc": "1+12+267257+150", "cdstubs": "no"}).mock(
             return_value=httpx.Response(200, json=DISCID_LOOKUP_RESPONSE)
         )
         results = await client.lookup_by_discid("-", toc="1+12+267257+150", cdstubs=False)
