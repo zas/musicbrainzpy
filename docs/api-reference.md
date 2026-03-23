@@ -6,7 +6,7 @@ Source: https://musicbrainz.org/doc/MusicBrainz_API
 
     https://musicbrainz.org/ws/2/
 
-All requests append `fmt=json` (or set `Accept: application/json`).
+All requests set the `Accept: application/json` header.
 
 ## Rate Limiting
 
@@ -114,3 +114,13 @@ Search syntax documented at: https://musicbrainz.org/doc/MusicBrainz_API/Search
 - **status**: official, promotion, bootleg, pseudo-release, withdrawn, cancelled
 - **type** (primary): album, single, ep, broadcast, other
 - **type** (secondary): compilation, soundtrack, live, remix, demo, audiobook, etc.
+
+## Annotations
+
+Entities may include an `annotation` field (when requested via `inc=annotation`).
+Annotations use MusicBrainz wiki markup. The `annotation` module provides converters:
+
+- `annotation_to_text(markup)` — strip all formatting to plain text
+- `annotation_to_markdown(markup)` — convert to Markdown
+
+See https://musicbrainz.org/doc/Annotation#Wiki_formatting for the markup spec.
