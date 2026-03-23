@@ -80,8 +80,9 @@ def build_authorization_url(
         params["code_challenge_method"] = "S256"
     if access_type:
         params["access_type"] = access_type
-    query = "&".join(f"{k}={httpx.URL('', params={k: v}).params}" for k, v in params.items())
-    return f"{AUTHORIZE_URL}?{query}"
+    from urllib.parse import urlencode
+
+    return f"{AUTHORIZE_URL}?{urlencode(params)}"
 
 
 @dataclass

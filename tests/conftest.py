@@ -57,19 +57,16 @@ ISRC_LOOKUP_RESPONSE = {
 }
 
 ISWC_LOOKUP_RESPONSE = {
-    "work-count": 1,
-    "work-list": {
-        "work": [
-            {
-                "id": "be5e4e89-20a0-3687-8a0e-5e3a2a3b1e42",
-                "title": "Enter Sandman",
-                "type": "Song",
-                "language": "eng",
-                "languages": ["eng"],
-                "iswcs": ["T-070.116.274-5"],
-            }
-        ],
-    },
+    "works": [
+        {
+            "id": "be5e4e89-20a0-3687-8a0e-5e3a2a3b1e42",
+            "title": "Enter Sandman",
+            "type": "Song",
+            "language": "eng",
+            "languages": ["eng"],
+            "iswcs": ["T-070.116.274-5"],
+        }
+    ],
 }
 
 DISCID_LOOKUP_RESPONSE = {

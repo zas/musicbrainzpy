@@ -425,7 +425,7 @@ class MusicBrainzClient:
         if includes:
             params["inc"] = "+".join(includes)
         data = await self._get(f"iswc/{iswc}", params)
-        return [Work.model_validate(w) for w in data.get("work-list", {}).get("work", [])]
+        return [Work.model_validate(w) for w in data.get("works", [])]
 
     async def lookup_by_discid(
         self,
