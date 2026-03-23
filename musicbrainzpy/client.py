@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 from musicbrainzpy._ratelimit import RateLimiter
+from musicbrainzpy.auth import make_digest_auth
 from musicbrainzpy.exceptions import (
     AuthenticationError,
     InvalidRequestError,
@@ -116,6 +117,8 @@ class MusicBrainzClient:
         app_contact: Contact URL or email for User-Agent.
         base_url: API base URL. Defaults to the official endpoint.
         rate_limit: Minimum seconds between requests. Set to 0 to disable.
+        username: MusicBrainz username for digest auth (needed for submissions).
+        password: MusicBrainz password for digest auth.
     """
 
     def __init__(
@@ -126,9 +129,12 @@ class MusicBrainzClient:
         *,
         base_url: str = DEFAULT_BASE_URL,
         rate_limit: float = 1.0,
+        username: str | None = None,
+        password: str | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/") + "/"
         self._rate_limiter = RateLimiter(interval=rate_limit)
+        self._auth = make_digest_auth(username, password) if username and password else None
         self._client = httpx.AsyncClient(
             headers={
                 "User-Agent": _build_user_agent(app_name, app_version, app_contact),
@@ -158,6 +164,65 @@ class MusicBrainzClient:
         response = await self._client.get(url, params=all_params)
         _raise_for_status(response)
         return response.json()
+
+    async def _post(self, path: str, *, params: dict[str, str], body: str) -> None:
+        """Perform a rate-limited authenticated POST with XML body.
+
+        Args:
+            path: API path (e.g. ``"tag"``).
+            params: Query parameters (must include ``client``).
+            body: XML request body.
+
+        Raises:
+            AuthenticationError: If no credentials were provided.
+        """
+        if not self._auth:
+            raise AuthenticationError("Authentication required for submissions. Provide username and password.")
+        await self._rate_limiter.acquire()
+        url = self._base_url + path
+        all_params = {"fmt": "json", **params}
+        response = await self._client.post(
+            url,
+            params=all_params,
+            content=body,
+            headers={"Content-Type": "application/xml; charset=utf-8"},
+            auth=self._auth,
+        )
+        _raise_for_status(response)
+
+    async def _put(self, path: str, *, params: dict[str, str]) -> None:
+        """Perform a rate-limited authenticated PUT (for collections).
+
+        Args:
+            path: Full API path including entity IDs.
+            params: Query parameters (must include ``client``).
+
+        Raises:
+            AuthenticationError: If no credentials were provided.
+        """
+        if not self._auth:
+            raise AuthenticationError("Authentication required for submissions. Provide username and password.")
+        await self._rate_limiter.acquire()
+        url = self._base_url + path
+        response = await self._client.put(url, params=params, auth=self._auth)
+        _raise_for_status(response)
+
+    async def _delete(self, path: str, *, params: dict[str, str]) -> None:
+        """Perform a rate-limited authenticated DELETE (for collections).
+
+        Args:
+            path: Full API path including entity IDs.
+            params: Query parameters (must include ``client``).
+
+        Raises:
+            AuthenticationError: If no credentials were provided.
+        """
+        if not self._auth:
+            raise AuthenticationError("Authentication required for submissions. Provide username and password.")
+        await self._rate_limiter.acquire()
+        url = self._base_url + path
+        response = await self._client.delete(url, params=params, auth=self._auth)
+        _raise_for_status(response)
 
     async def lookup(self, entity_type: str, mbid: str, includes: list[str] | None = None) -> dict[str, Any]:
         """Look up a single entity by MBID.

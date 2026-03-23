@@ -245,3 +245,24 @@ class TestLookupByDiscid:
         )
         results = await client.lookup_by_discid("-", toc="1+12+267257+150", cdstubs=False)
         assert len(results) == 1
+
+
+class TestAuth:
+    def test_no_auth_by_default(self, client: MusicBrainzClient) -> None:
+        assert client._auth is None
+
+    def test_auth_with_credentials(self) -> None:
+        c = MusicBrainzClient("a", "1", "x", rate_limit=0, username="user", password="pass")
+        assert c._auth is not None
+
+    async def test_post_without_auth_raises(self, client: MusicBrainzClient) -> None:
+        with pytest.raises(AuthenticationError, match="Authentication required"):
+            await client._post("tag", params={"client": "test-0.1"}, body="<xml/>")
+
+    async def test_put_without_auth_raises(self, client: MusicBrainzClient) -> None:
+        with pytest.raises(AuthenticationError, match="Authentication required"):
+            await client._put("collection/abc/releases/def", params={"client": "test-0.1"})
+
+    async def test_delete_without_auth_raises(self, client: MusicBrainzClient) -> None:
+        with pytest.raises(AuthenticationError, match="Authentication required"):
+            await client._delete("collection/abc/releases/def", params={"client": "test-0.1"})
