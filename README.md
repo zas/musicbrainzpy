@@ -2,7 +2,7 @@
 
 Modern Python bindings for the [MusicBrainz](https://musicbrainz.org/) JSON API.
 
-Thin wrapper around the [MusicBrainz Web Service v2](https://musicbrainz.org/doc/MusicBrainz_API) — handles rate limiting, authentication, and (de)serialization via Pydantic models. All responses use the JSON API (`fmt=json`).
+Thin wrapper around the [MusicBrainz Web Service v2](https://musicbrainz.org/doc/MusicBrainz_API) — handles rate limiting, authentication, and (de)serialization via Pydantic models. All responses use the JSON API (`Accept: application/json`).
 
 ## Requirements
 
@@ -70,6 +70,7 @@ data = await client.browse("release", linked_type="artist", linked_id=mbid)
 recordings = await client.lookup_by_isrc("USEE10100063")
 works = await client.lookup_by_iswc("T-070.116.274-5")
 releases = await client.lookup_by_discid(discid, toc="1+12+267257+150")
+data = await client.lookup_by_url("https://www.metallica.com/")
 ```
 
 ### Submissions (require authentication)
@@ -88,6 +89,22 @@ client = MusicBrainzClient("myapp", "1.0", "me@example.com", oauth=oauth)
 # Then submit
 await client.submit_tags("myapp-1.0", {"artist": {mbid: ["rock", "metal"]}})
 await client.submit_ratings("myapp-1.0", {"artist": {mbid: 80}})
+await client.submit_barcodes("myapp-1.0", {release_mbid: "4050538793819"})
+await client.submit_isrcs("myapp-1.0", {recording_mbid: ["USEE10100063"]})
+
+# Collection management
+await client.collection_add("myapp-1.0", collection_mbid, "releases", [mbid])
+await client.collection_remove("myapp-1.0", collection_mbid, "releases", [mbid])
+```
+
+### Annotation helpers
+
+```python
+from musicbrainzpy import annotation_to_text, annotation_to_markdown
+
+# Convert MusicBrainz wiki markup to plain text or Markdown
+plain = annotation_to_text(artist.annotation)
+md = annotation_to_markdown(artist.annotation)
 ```
 
 See [docs/oauth2.md](docs/oauth2.md) for the full OAuth2 guide with PKCE, token refresh, and examples.
