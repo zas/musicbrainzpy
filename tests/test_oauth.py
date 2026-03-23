@@ -57,6 +57,10 @@ class TestBuildAuthorizationUrl:
         url = build_authorization_url("cid", "http://localhost", ["tag"], access_type="offline")
         assert "access_type=offline" in url
 
+    def test_custom_server(self) -> None:
+        url = build_authorization_url("cid", "http://localhost", ["tag"], server="https://test.musicbrainz.org")
+        assert url.startswith("https://test.musicbrainz.org/oauth2/authorize?")
+
 
 class TestOAuthToken:
     def test_from_response(self) -> None:
@@ -142,3 +146,13 @@ class TestOAuthHandler:
     async def test_revoke_without_token_raises(self, handler: OAuthHandler) -> None:
         with pytest.raises(ValueError, match="No token to revoke"):
             await handler.revoke()
+
+    async def test_custom_server(self) -> None:
+        h = OAuthHandler("cid", "csecret", "http://localhost", server="https://test.musicbrainz.org")
+        with respx.mock:
+            route = respx.post("https://test.musicbrainz.org/oauth2/token").mock(
+                return_value=httpx.Response(200, json=TOKEN_RESPONSE)
+            )
+            token = await h.exchange_code("code-123")
+            assert token.access_token == "test-access-token"
+            assert route.called

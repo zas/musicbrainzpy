@@ -14,10 +14,31 @@ from dataclasses import dataclass, field
 
 import httpx
 
-AUTHORIZE_URL = "https://musicbrainz.org/oauth2/authorize"
-TOKEN_URL = "https://musicbrainz.org/oauth2/token"
-REVOKE_URL = "https://musicbrainz.org/oauth2/revoke"
-USERINFO_URL = "https://musicbrainz.org/oauth2/userinfo"
+DEFAULT_SERVER = "https://musicbrainz.org"
+
+AUTHORIZE_URL = f"{DEFAULT_SERVER}/oauth2/authorize"
+TOKEN_URL = f"{DEFAULT_SERVER}/oauth2/token"
+REVOKE_URL = f"{DEFAULT_SERVER}/oauth2/revoke"
+USERINFO_URL = f"{DEFAULT_SERVER}/oauth2/userinfo"
+
+
+def _oauth_urls(server: str) -> tuple[str, str, str, str]:
+    """Derive OAuth2 endpoint URLs from a server base URL.
+
+    Args:
+        server: Server base URL (e.g. ``"https://test.musicbrainz.org"``).
+
+    Returns:
+        Tuple of ``(authorize_url, token_url, revoke_url, userinfo_url)``.
+    """
+    s = server.rstrip("/")
+    return (
+        f"{s}/oauth2/authorize",
+        f"{s}/oauth2/token",
+        f"{s}/oauth2/revoke",
+        f"{s}/oauth2/userinfo",
+    )
+
 
 #: Out-of-band redirect URI for desktop/CLI applications.
 OOB_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
@@ -53,6 +74,7 @@ def build_authorization_url(
     state: str | None = None,
     code_challenge: str | None = None,
     access_type: str | None = None,
+    server: str = DEFAULT_SERVER,
 ) -> str:
     """Build the OAuth2 authorization URL to redirect the user to.
 
@@ -63,10 +85,12 @@ def build_authorization_url(
         state: Optional CSRF token / state string.
         code_challenge: Optional PKCE S256 challenge (from :func:`generate_pkce`).
         access_type: ``"offline"`` to get a refresh token, ``"online"`` (default) otherwise.
+        server: Server base URL. Defaults to ``https://musicbrainz.org``.
 
     Returns:
         Full authorization URL to open in a browser.
     """
+    authorize_url, _, _, _ = _oauth_urls(server)
     params: dict[str, str] = {
         "response_type": "code",
         "client_id": client_id,
@@ -82,7 +106,7 @@ def build_authorization_url(
         params["access_type"] = access_type
     from urllib.parse import urlencode
 
-    return f"{AUTHORIZE_URL}?{urlencode(params)}"
+    return f"{authorize_url}?{urlencode(params)}"
 
 
 @dataclass
@@ -118,12 +142,14 @@ class OAuthHandler:
         client_id: OAuth2 client ID.
         client_secret: OAuth2 client secret.
         redirect_uri: Registered redirect URI.
+        server: Server base URL. Defaults to ``https://musicbrainz.org``.
     """
 
-    def __init__(self, client_id: str, client_secret: str, redirect_uri: str) -> None:
+    def __init__(self, client_id: str, client_secret: str, redirect_uri: str, *, server: str = DEFAULT_SERVER) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
+        self._authorize_url, self._token_url, self._revoke_url, self._userinfo_url = _oauth_urls(server)
         self.token: OAuthToken | None = None
 
     async def exchange_code(
@@ -189,7 +215,7 @@ class OAuthHandler:
                 raise ValueError("No token to revoke.")
         async with httpx.AsyncClient() as client:
             await client.post(
-                REVOKE_URL,
+                self._revoke_url,
                 data={
                     "token": token,
                     "client_id": self.client_id,
@@ -216,7 +242,7 @@ class OAuthHandler:
     async def _token_request(self, data: dict[str, str]) -> OAuthToken:
         """Send a POST to the token endpoint and parse the response."""
         async with httpx.AsyncClient() as client:
-            response = await client.post(TOKEN_URL, data=data)
+            response = await client.post(self._token_url, data=data)
             response.raise_for_status()
             return OAuthToken.from_response(response.json())
 
