@@ -291,3 +291,70 @@ class MusicBrainzClient:
             count=data.get(f"{singular}-count", 0),
             offset=data.get(f"{singular}-offset", 0),
         )
+
+    # --- Non-MBID lookups ---
+
+    async def lookup_by_isrc(self, isrc: str, includes: list[str] | None = None) -> list[Recording]:
+        """Look up recordings by ISRC.
+
+        Args:
+            isrc: International Standard Recording Code.
+            includes: Optional ``inc=`` subqueries for recordings.
+        """
+        params: dict[str, str] = {}
+        if includes:
+            params["inc"] = "+".join(includes)
+        data = await self._get(f"isrc/{isrc}", params)
+        return [Recording.model_validate(r) for r in data.get("recordings", [])]
+
+    async def lookup_by_iswc(self, iswc: str, includes: list[str] | None = None) -> list[Work]:
+        """Look up works by ISWC.
+
+        Args:
+            iswc: International Standard Musical Work Code.
+            includes: Optional ``inc=`` subqueries for works.
+        """
+        params: dict[str, str] = {}
+        if includes:
+            params["inc"] = "+".join(includes)
+        data = await self._get(f"iswc/{iswc}", params)
+        return [Work.model_validate(w) for w in data.get("work-list", {}).get("work", [])]
+
+    async def lookup_by_discid(
+        self,
+        discid: str,
+        *,
+        toc: str | None = None,
+        cdstubs: bool = True,
+        media_format: str | None = None,
+        includes: list[str] | None = None,
+    ) -> list[Release]:
+        """Look up releases by disc ID.
+
+        Args:
+            discid: The disc ID (or ``"-"`` for TOC-only lookup).
+            toc: Table of contents for fuzzy matching.
+            cdstubs: Whether to include CD stubs (default True).
+            media_format: Filter by media format (e.g. ``"all"``).
+            includes: Optional ``inc=`` subqueries for releases.
+        """
+        params: dict[str, str] = {}
+        if toc:
+            params["toc"] = toc
+        if not cdstubs:
+            params["cdstubs"] = "no"
+        if media_format:
+            params["media-format"] = media_format
+        if includes:
+            params["inc"] = "+".join(includes)
+        data = await self._get(f"discid/{discid}", params)
+        return [Release.model_validate(r) for r in data.get("releases", [])]
+
+    async def lookup_by_url(self, *urls: str) -> dict[str, Any]:
+        """Look up URL entities by resource URL.
+
+        Args:
+            urls: One or more URLs to look up (max 100).
+        """
+        params: dict[str, str | list[str]] = {"resource": list(urls)} if len(urls) > 1 else {"resource": urls[0]}
+        return await self._get("url", params)  # type: ignore[arg-type]

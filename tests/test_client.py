@@ -21,10 +21,13 @@ from musicbrainzpy.exceptions import (
     NotFoundError,
     RateLimitedError,
 )
-from musicbrainzpy.models import Artist, Release
+from musicbrainzpy.models import Artist, Recording, Release, Work
 from tests.conftest import (
     ARTIST_LOOKUP_RESPONSE,
     ARTIST_SEARCH_RESPONSE,
+    DISCID_LOOKUP_RESPONSE,
+    ISRC_LOOKUP_RESPONSE,
+    ISWC_LOOKUP_RESPONSE,
     RELEASE_BROWSE_RESPONSE,
 )
 
@@ -201,3 +204,44 @@ class TestBrowseTyped:
         assert len(result.items) == 1
         assert isinstance(result.items[0], Release)
         assert result.items[0].title == "Master of Puppets"
+
+
+class TestLookupByIsrc:
+    async def test_returns_recordings(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        mock_api.get("/isrc/USEE10100063", params={"fmt": "json"}).mock(
+            return_value=httpx.Response(200, json=ISRC_LOOKUP_RESPONSE)
+        )
+        results = await client.lookup_by_isrc("USEE10100063")
+        assert len(results) == 1
+        assert isinstance(results[0], Recording)
+        assert results[0].title == "Enter Sandman"
+
+
+class TestLookupByIswc:
+    async def test_returns_works(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        mock_api.get("/iswc/T-070.116.274-5", params={"fmt": "json"}).mock(
+            return_value=httpx.Response(200, json=ISWC_LOOKUP_RESPONSE)
+        )
+        results = await client.lookup_by_iswc("T-070.116.274-5")
+        assert len(results) == 1
+        assert isinstance(results[0], Work)
+        assert results[0].title == "Enter Sandman"
+
+
+class TestLookupByDiscid:
+    async def test_returns_releases(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        discid = "I5l9cCSFccLKFEKS.7wqSZAorPU-"
+        mock_api.get(f"/discid/{discid}", params={"fmt": "json"}).mock(
+            return_value=httpx.Response(200, json=DISCID_LOOKUP_RESPONSE)
+        )
+        results = await client.lookup_by_discid(discid)
+        assert len(results) == 1
+        assert isinstance(results[0], Release)
+        assert results[0].title == "Metallica"
+
+    async def test_with_toc(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        mock_api.get("/discid/-", params={"fmt": "json", "toc": "1+12+267257+150", "cdstubs": "no"}).mock(
+            return_value=httpx.Response(200, json=DISCID_LOOKUP_RESPONSE)
+        )
+        results = await client.lookup_by_discid("-", toc="1+12+267257+150", cdstubs=False)
+        assert len(results) == 1

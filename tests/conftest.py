@@ -45,6 +45,44 @@ RELEASE_BROWSE_RESPONSE = {
     ],
 }
 
+ISRC_LOOKUP_RESPONSE = {
+    "recordings": [
+        {
+            "id": "ba5d0553-032f-4127-aed7-4d2e0d18f3f9",
+            "title": "Enter Sandman",
+            "disambiguation": "",
+            "length": 331160,
+        }
+    ],
+}
+
+ISWC_LOOKUP_RESPONSE = {
+    "work-count": 1,
+    "work-list": {
+        "work": [
+            {
+                "id": "be5e4e89-20a0-3687-8a0e-5e3a2a3b1e42",
+                "title": "Enter Sandman",
+                "type": "Song",
+                "language": "eng",
+                "languages": ["eng"],
+                "iswcs": ["T-070.116.274-5"],
+            }
+        ],
+    },
+}
+
+DISCID_LOOKUP_RESPONSE = {
+    "releases": [
+        {
+            "id": "d87a6b90-7a9e-4ca1-a170-194bf443e2e9",
+            "title": "Metallica",
+            "status": "Official",
+            "date": "1991-08-12",
+        }
+    ],
+}
+
 
 @pytest.fixture
 def client() -> MusicBrainzClient:
