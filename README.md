@@ -17,6 +17,70 @@ cd musicbrainzpy
 uv sync
 ```
 
+## Usage
+
+### Async client
+
+```python
+import asyncio
+from musicbrainzpy import MusicBrainzClient
+
+async def main():
+    async with MusicBrainzClient("myapp", "1.0", "me@example.com") as client:
+        # Search for an artist
+        result = await client.search_typed("artist", "Metallica")
+        artist = result.items[0]
+        print(f"{artist.name} ({artist.country})")
+
+        # Look up by MBID with includes
+        artist = await client.lookup_typed("artist", artist.id, includes=["tags", "genres"])
+
+        # Browse releases by artist
+        releases = await client.browse_typed(
+            "release", linked_type="artist", linked_id=artist.id, limit=10
+        )
+        for r in releases.items:
+            print(f"  {r.title}")
+
+asyncio.run(main())
+```
+
+### Sync client
+
+```python
+from musicbrainzpy import SyncMusicBrainzClient
+
+with SyncMusicBrainzClient("myapp", "1.0", "me@example.com") as client:
+    result = client.search_typed("artist", "Metallica")
+    print(result.items[0].name)
+```
+
+### Raw dict responses
+
+```python
+# All typed methods have raw equivalents returning plain dicts:
+data = await client.lookup("artist", mbid)
+data = await client.search("artist", "Metallica")
+data = await client.browse("release", linked_type="artist", linked_id=mbid)
+```
+
+### Non-MBID lookups
+
+```python
+recordings = await client.lookup_by_isrc("USEE10100063")
+works = await client.lookup_by_iswc("T-070.116.274-5")
+releases = await client.lookup_by_discid(discid, toc="1+12+267257+150")
+```
+
+### Submissions (require authentication)
+
+```python
+client = MusicBrainzClient("myapp", "1.0", "me@example.com",
+                           username="user", password="pass")
+await client.submit_tags("myapp-1.0", {"artist": {mbid: ["rock", "metal"]}})
+await client.submit_ratings("myapp-1.0", {"artist": {mbid: 80}})
+```
+
 ## Development
 
 ```bash
