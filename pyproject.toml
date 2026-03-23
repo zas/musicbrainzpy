@@ -1,0 +1,47 @@
+[project]
+name = "musicbrainzpy"
+version = "0.1.0"
+description = "Modern Python bindings for the MusicBrainz JSON API"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.12"
+keywords = ["musicbrainz", "music", "metadata", "api", "json"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Topic :: Multimedia :: Sound/Audio",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.28",
+    "pydantic>=2.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/zas/musicbrainzpy"
+Repository = "https://github.com/zas/musicbrainzpy"
+Issues = "https://github.com/zas/musicbrainzpy/issues"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.25",
+    "respx>=0.22",
+    "ruff>=0.14",
+    "ty>=0.0.21",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PT"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
