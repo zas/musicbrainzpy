@@ -9,7 +9,7 @@ typed Pydantic models for all 13 core entity types.
 ## Design Principles
 
 - **Thin wrapper**: no business logic beyond what the API provides
-- **JSON-native**: uses `fmt=json` for all GET requests; submissions use XML (API requirement)
+- **JSON-native**: uses `Accept: application/json` header for all GET requests; submissions use XML (API requirement)
 - **Async-first**: built on `httpx.AsyncClient`; sync wrapper provided for convenience
 - **Typed**: Pydantic v2 models with `extra="allow"` for forward compatibility
 - **Minimal dependencies**: `httpx` + `pydantic` only
@@ -73,10 +73,11 @@ The base URL is configurable via the client constructor to support mirrors and l
 ```
 musicbrainzpy/
 ├── __init__.py          # Public API re-exports
-├── client.py            # MusicBrainzClient (async + sync)
+├── client.py            # MusicBrainzClient (async)
+├── sync_client.py       # SyncMusicBrainzClient (sync wrapper)
 ├── models/              # Pydantic models per entity type
 │   ├── __init__.py      # Re-exports all models
-│   ├── common.py        # Shared: ArtistCredit, LifeSpan, Tag, Relation, etc.
+│   ├── common.py        # Shared: ArtistCredit, LifeSpan, Tag, Genre, etc.
 │   ├── artist.py
 │   ├── release.py
 │   ├── recording.py
@@ -93,11 +94,18 @@ musicbrainzpy/
 ├── enums.py             # EntityType, ReleaseStatus, ReleaseGroupType, etc.
 ├── auth.py              # OAuth2 flow helpers
 ├── exceptions.py        # MusicBrainzError, NotFoundError, RateLimitedError, etc.
-└── _ratelimit.py        # Async/sync rate limiter
+├── annotation.py        # Wiki markup → plain text / Markdown converter
+├── _xml.py              # XML body builders for submissions
+├── _ratelimit.py        # Async/sync rate limiter
+└── py.typed             # PEP 561 marker
 tests/
 ├── conftest.py          # respx fixtures, sample JSON responses
 ├── test_client.py       # Lookup/browse/search integration tests
-└── test_models.py       # Deserialization round-trip tests
+├── test_sync_client.py  # Sync wrapper tests
+├── test_models.py       # Deserialization round-trip tests
+├── test_xml.py          # XML body builder tests
+├── test_oauth.py        # OAuth2 flow tests
+└── test_annotation.py   # Annotation converter tests
 ```
 
 ## Implementation Order
