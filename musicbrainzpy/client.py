@@ -13,7 +13,7 @@ import httpx
 
 from musicbrainzpy._ratelimit import RateLimiter
 from musicbrainzpy._xml import build_barcode_xml, build_isrc_xml, build_rating_xml, build_tag_xml
-from musicbrainzpy.auth import make_digest_auth
+from musicbrainzpy.auth import OAuthHandler, make_digest_auth
 from musicbrainzpy.exceptions import (
     AuthenticationError,
     InvalidRequestError,
@@ -112,14 +112,20 @@ class BrowseResult[T: MBModel]:
 class MusicBrainzClient:
     """Async client for the MusicBrainz JSON API.
 
+    Supports two authentication methods (for submissions and user data):
+
+    - **Digest auth**: pass ``username`` and ``password``.
+    - **OAuth2**: pass an :class:`~musicbrainzpy.auth.OAuthHandler` instance.
+
     Args:
         app_name: Application name for User-Agent.
         app_version: Application version for User-Agent.
         app_contact: Contact URL or email for User-Agent.
         base_url: API base URL. Defaults to the official endpoint.
         rate_limit: Minimum seconds between requests. Set to 0 to disable.
-        username: MusicBrainz username for digest auth (needed for submissions).
+        username: MusicBrainz username for digest auth.
         password: MusicBrainz password for digest auth.
+        oauth: An :class:`~musicbrainzpy.auth.OAuthHandler` for OAuth2 auth.
     """
 
     def __init__(
@@ -132,10 +138,12 @@ class MusicBrainzClient:
         rate_limit: float = 1.0,
         username: str | None = None,
         password: str | None = None,
+        oauth: OAuthHandler | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/") + "/"
         self._rate_limiter = RateLimiter(interval=rate_limit)
-        self._auth = make_digest_auth(username, password) if username and password else None
+        self._digest_auth = make_digest_auth(username, password) if username and password else None
+        self._oauth = oauth
         self._client = httpx.AsyncClient(
             headers={
                 "User-Agent": _build_user_agent(app_name, app_version, app_contact),
@@ -155,6 +163,26 @@ class MusicBrainzClient:
 
     # --- Raw methods (return dicts) ---
 
+    async def _get_auth_kwargs(self) -> dict[str, Any]:
+        """Build auth kwargs for an authenticated request.
+
+        Returns dict with either ``auth=`` (digest) or ``headers=`` (OAuth2 bearer).
+
+        Raises:
+            AuthenticationError: If no credentials were configured.
+        """
+        if self._oauth:
+            token = await self._oauth.get_access_token()
+            return {"headers": {"Authorization": f"Bearer {token}"}}
+        if self._digest_auth:
+            return {"auth": self._digest_auth}
+        raise AuthenticationError("Authentication required. Provide username/password or an OAuthHandler.")
+
+    @property
+    def is_authenticated(self) -> bool:
+        """Whether any authentication method is configured."""
+        return self._digest_auth is not None or self._oauth is not None
+
     async def _get(self, path: str, params: dict[str, str] | None = None) -> dict[str, Any]:
         """Perform a rate-limited GET request and return parsed JSON."""
         await self._rate_limiter.acquire()
@@ -163,6 +191,18 @@ class MusicBrainzClient:
         if params:
             all_params.update(params)
         response = await self._client.get(url, params=all_params)
+        _raise_for_status(response)
+        return response.json()
+
+    async def _get_authenticated(self, path: str, params: dict[str, str] | None = None) -> dict[str, Any]:
+        """Perform a rate-limited authenticated GET (for user-tags, user-ratings, etc.)."""
+        auth_kwargs = await self._get_auth_kwargs()
+        await self._rate_limiter.acquire()
+        url = self._base_url + path
+        all_params = {"fmt": "json"}
+        if params:
+            all_params.update(params)
+        response = await self._client.get(url, params=all_params, **auth_kwargs)
         _raise_for_status(response)
         return response.json()
 
@@ -177,17 +217,20 @@ class MusicBrainzClient:
         Raises:
             AuthenticationError: If no credentials were provided.
         """
-        if not self._auth:
-            raise AuthenticationError("Authentication required for submissions. Provide username and password.")
+        auth_kwargs = await self._get_auth_kwargs()
         await self._rate_limiter.acquire()
         url = self._base_url + path
         all_params = {"fmt": "json", **params}
+        headers: dict[str, str] = {"Content-Type": "application/xml; charset=utf-8"}
+        # Merge bearer token header if using OAuth2
+        if "headers" in auth_kwargs:
+            headers.update(auth_kwargs["headers"])
         response = await self._client.post(
             url,
             params=all_params,
             content=body,
-            headers={"Content-Type": "application/xml; charset=utf-8"},
-            auth=self._auth,
+            headers=headers,
+            auth=auth_kwargs.get("auth"),  # type: ignore[arg-type]
         )
         _raise_for_status(response)
 
@@ -201,11 +244,10 @@ class MusicBrainzClient:
         Raises:
             AuthenticationError: If no credentials were provided.
         """
-        if not self._auth:
-            raise AuthenticationError("Authentication required for submissions. Provide username and password.")
+        auth_kwargs = await self._get_auth_kwargs()
         await self._rate_limiter.acquire()
         url = self._base_url + path
-        response = await self._client.put(url, params=params, auth=self._auth)
+        response = await self._client.put(url, params=params, **auth_kwargs)
         _raise_for_status(response)
 
     async def _delete(self, path: str, *, params: dict[str, str]) -> None:
@@ -218,11 +260,10 @@ class MusicBrainzClient:
         Raises:
             AuthenticationError: If no credentials were provided.
         """
-        if not self._auth:
-            raise AuthenticationError("Authentication required for submissions. Provide username and password.")
+        auth_kwargs = await self._get_auth_kwargs()
         await self._rate_limiter.acquire()
         url = self._base_url + path
-        response = await self._client.delete(url, params=params, auth=self._auth)
+        response = await self._client.delete(url, params=params, **auth_kwargs)
         _raise_for_status(response)
 
     async def lookup(self, entity_type: str, mbid: str, includes: list[str] | None = None) -> dict[str, Any]:

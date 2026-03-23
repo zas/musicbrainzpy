@@ -249,11 +249,20 @@ class TestLookupByDiscid:
 
 class TestAuth:
     def test_no_auth_by_default(self, client: MusicBrainzClient) -> None:
-        assert client._auth is None
+        assert client.is_authenticated is False
 
-    def test_auth_with_credentials(self) -> None:
+    def test_digest_auth_with_credentials(self) -> None:
         c = MusicBrainzClient("a", "1", "x", rate_limit=0, username="user", password="pass")
-        assert c._auth is not None
+        assert c.is_authenticated is True
+        assert c._digest_auth is not None
+
+    def test_oauth_auth(self) -> None:
+        from musicbrainzpy.auth import OAuthHandler
+
+        handler = OAuthHandler("cid", "csecret", "http://localhost")
+        c = MusicBrainzClient("a", "1", "x", rate_limit=0, oauth=handler)
+        assert c.is_authenticated is True
+        assert c._oauth is handler
 
     async def test_post_without_auth_raises(self, client: MusicBrainzClient) -> None:
         with pytest.raises(AuthenticationError, match="Authentication required"):

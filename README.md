@@ -75,11 +75,22 @@ releases = await client.lookup_by_discid(discid, toc="1+12+267257+150")
 ### Submissions (require authentication)
 
 ```python
+# Option 1: Digest auth
 client = MusicBrainzClient("myapp", "1.0", "me@example.com",
                            username="user", password="pass")
+
+# Option 2: OAuth2 (recommended)
+from musicbrainzpy import OAuthHandler
+oauth = OAuthHandler("client-id", "client-secret", "http://localhost:8080/callback")
+await oauth.exchange_code("authorization-code")
+client = MusicBrainzClient("myapp", "1.0", "me@example.com", oauth=oauth)
+
+# Then submit
 await client.submit_tags("myapp-1.0", {"artist": {mbid: ["rock", "metal"]}})
 await client.submit_ratings("myapp-1.0", {"artist": {mbid: 80}})
 ```
+
+See [docs/oauth2.md](docs/oauth2.md) for the full OAuth2 guide with PKCE, token refresh, and examples.
 
 ## Development
 

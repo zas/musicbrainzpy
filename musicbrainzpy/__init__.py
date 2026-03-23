@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from musicbrainzpy.auth import OAuthHandler, OAuthToken, build_authorization_url, generate_pkce
 from musicbrainzpy.client import BrowseResult, MusicBrainzClient, SearchResult
+from musicbrainzpy.enums import OAuthScope
 from musicbrainzpy.exceptions import (
     AuthenticationError,
     InvalidRequestError,
@@ -19,7 +21,12 @@ __all__ = [
     "MusicBrainzClient",
     "MusicBrainzError",
     "NotFoundError",
+    "OAuthHandler",
+    "OAuthScope",
+    "OAuthToken",
     "RateLimitedError",
     "SearchResult",
     "SyncMusicBrainzClient",
+    "build_authorization_url",
+    "generate_pkce",
 ]

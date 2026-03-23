@@ -53,3 +53,15 @@ class ReleaseGroupSecondaryType(StrEnum):
     REMIX = "remix"
     SOUNDTRACK = "soundtrack"
     SPOKENWORD = "spokenword"
+
+
+class OAuthScope(StrEnum):
+    """OAuth2 scopes for MusicBrainz API authorization."""
+
+    PROFILE = "profile"
+    EMAIL = "email"
+    TAG = "tag"
+    RATING = "rating"
+    COLLECTION = "collection"
+    SUBMIT_ISRC = "submit_isrc"
+    SUBMIT_BARCODE = "submit_barcode"
