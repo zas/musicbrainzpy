@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 from musicbrainzpy._ratelimit import RateLimiter
+from musicbrainzpy._xml import build_barcode_xml, build_isrc_xml, build_rating_xml, build_tag_xml
 from musicbrainzpy.auth import make_digest_auth
 from musicbrainzpy.exceptions import (
     AuthenticationError,
@@ -423,3 +424,69 @@ class MusicBrainzClient:
         """
         params: dict[str, str | list[str]] = {"resource": list(urls)} if len(urls) > 1 else {"resource": urls[0]}
         return await self._get("url", params)  # type: ignore[arg-type]
+
+    # --- Submissions (require auth) ---
+
+    async def submit_tags(self, client_id: str, entities: dict[str, dict[str, list[str]]]) -> None:
+        """Submit tags/genres for entities.
+
+        Args:
+            client_id: Application identifier (e.g. ``"myapp-1.0"``).
+            entities: Mapping of entity type → {mbid: [tag_names]}.
+        """
+        body = build_tag_xml(entities)
+        await self._post("tag", params={"client": client_id}, body=body)
+
+    async def submit_ratings(self, client_id: str, entities: dict[str, dict[str, int]]) -> None:
+        """Submit ratings for entities.
+
+        Args:
+            client_id: Application identifier.
+            entities: Mapping of entity type → {mbid: rating (0-100)}.
+        """
+        body = build_rating_xml(entities)
+        await self._post("rating", params={"client": client_id}, body=body)
+
+    async def submit_barcodes(self, client_id: str, barcodes: dict[str, str]) -> None:
+        """Submit barcodes for releases.
+
+        Args:
+            client_id: Application identifier.
+            barcodes: Mapping of release MBID → barcode (EAN/UPC).
+        """
+        body = build_barcode_xml(barcodes)
+        await self._post("release/", params={"client": client_id}, body=body)
+
+    async def submit_isrcs(self, client_id: str, isrcs: dict[str, list[str]]) -> None:
+        """Submit ISRCs for recordings.
+
+        Args:
+            client_id: Application identifier.
+            isrcs: Mapping of recording MBID → list of ISRCs.
+        """
+        body = build_isrc_xml(isrcs)
+        await self._post("recording/", params={"client": client_id}, body=body)
+
+    async def collection_add(self, client_id: str, collection_id: str, entity_type: str, mbids: list[str]) -> None:
+        """Add entities to a collection.
+
+        Args:
+            client_id: Application identifier.
+            collection_id: MBID of the collection.
+            entity_type: Entity type plural (e.g. ``"releases"``, ``"artists"``).
+            mbids: List of entity MBIDs to add (max ~400).
+        """
+        ids = ";".join(mbids)
+        await self._put(f"collection/{collection_id}/{entity_type}/{ids}", params={"client": client_id})
+
+    async def collection_remove(self, client_id: str, collection_id: str, entity_type: str, mbids: list[str]) -> None:
+        """Remove entities from a collection.
+
+        Args:
+            client_id: Application identifier.
+            collection_id: MBID of the collection.
+            entity_type: Entity type plural (e.g. ``"releases"``, ``"artists"``).
+            mbids: List of entity MBIDs to remove.
+        """
+        ids = ";".join(mbids)
+        await self._delete(f"collection/{collection_id}/{entity_type}/{ids}", params={"client": client_id})
