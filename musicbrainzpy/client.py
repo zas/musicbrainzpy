@@ -164,6 +164,15 @@ class MusicBrainzClient:
 
     # --- Raw methods (return dicts) ---
 
+    async def _get_optional_auth_kwargs(self) -> dict[str, Any]:
+        """Build auth kwargs if credentials are configured, otherwise return empty dict."""
+        if self._oauth:
+            token = await self._oauth.get_access_token()
+            return {"headers": {"Authorization": f"Bearer {token}"}}
+        if self._digest_auth:
+            return {"auth": self._digest_auth}
+        return {}
+
     async def _get_auth_kwargs(self) -> dict[str, Any]:
         """Build auth kwargs for an authenticated request.
 
@@ -172,12 +181,10 @@ class MusicBrainzClient:
         Raises:
             AuthenticationError: If no credentials were configured.
         """
-        if self._oauth:
-            token = await self._oauth.get_access_token()
-            return {"headers": {"Authorization": f"Bearer {token}"}}
-        if self._digest_auth:
-            return {"auth": self._digest_auth}
-        raise AuthenticationError("Authentication required. Provide username/password or an OAuthHandler.")
+        kwargs = await self._get_optional_auth_kwargs()
+        if not kwargs:
+            raise AuthenticationError("Authentication required. Provide username/password or an OAuthHandler.")
+        return kwargs
 
     @property
     def is_authenticated(self) -> bool:
@@ -185,16 +192,11 @@ class MusicBrainzClient:
         return self._digest_auth is not None or self._oauth is not None
 
     async def _get(self, path: str, params: Mapping[str, str | list[str]] | None = None) -> dict[str, Any]:
-        """Perform a rate-limited GET request and return parsed JSON."""
-        await self._rate_limiter.acquire()
-        url = self._base_url + path
-        response = await self._client.get(url, params=params)
-        _raise_for_status(response)
-        return response.json()
+        """Perform a rate-limited GET request and return parsed JSON.
 
-    async def _get_authenticated(self, path: str, params: dict[str, str] | None = None) -> dict[str, Any]:
-        """Perform a rate-limited authenticated GET (for user-tags, user-ratings, etc.)."""
-        auth_kwargs = await self._get_auth_kwargs()
+        Sends authentication credentials if configured.
+        """
+        auth_kwargs = await self._get_optional_auth_kwargs()
         await self._rate_limiter.acquire()
         url = self._base_url + path
         response = await self._client.get(url, params=params, **auth_kwargs)
