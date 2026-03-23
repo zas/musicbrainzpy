@@ -1,0 +1,38 @@
+"""Artist model."""
+
+from __future__ import annotations
+
+from pydantic import Field
+
+from musicbrainzpy.models.common import (
+    Alias,
+    AreaStub,
+    Genre,
+    LifeSpan,
+    MBModel,
+    Rating,
+    Tag,
+)
+
+
+class Artist(MBModel):
+    """A MusicBrainz artist."""
+
+    id: str
+    name: str
+    sort_name: str = Field(alias="sort-name")
+    disambiguation: str = ""
+    type: str | None = None
+    type_id: str | None = Field(default=None, alias="type-id")
+    country: str | None = None
+    area: AreaStub | None = None
+    begin_area: AreaStub | None = Field(default=None, alias="begin-area")
+    end_area: AreaStub | None = Field(default=None, alias="end-area")
+    life_span: LifeSpan | None = Field(default=None, alias="life-span")
+    isnis: list[str] = Field(default_factory=list)
+    # Optional inc= fields
+    aliases: list[Alias] | None = None
+    tags: list[Tag] | None = None
+    genres: list[Genre] | None = None
+    rating: Rating | None = None
+    annotation: str | None = None

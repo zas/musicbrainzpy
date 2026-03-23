@@ -1,3 +1,99 @@
 """Shared Pydantic models used across entity types."""
 
 from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class MBModel(BaseModel):
+    """Base model for all MusicBrainz entities. Allows extra fields for forward compatibility."""
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+
+class LifeSpan(MBModel):
+    """A begin/end date range."""
+
+    begin: str | None = None
+    end: str | None = None
+    ended: bool = False
+
+
+class AreaStub(MBModel):
+    """Minimal area reference embedded in other entities."""
+
+    id: str
+    name: str
+    sort_name: str = Field(alias="sort-name")
+    disambiguation: str = ""
+    iso_3166_1_codes: list[str] = Field(default_factory=list, alias="iso-3166-1-codes")
+
+
+class Tag(MBModel):
+    """A user-submitted tag with vote count."""
+
+    name: str
+    count: int = 0
+
+
+class Genre(MBModel):
+    """A genre tag with vote count."""
+
+    id: str
+    name: str
+    count: int = 0
+    disambiguation: str = ""
+
+
+class Rating(MBModel):
+    """Aggregate rating."""
+
+    value: float | None = None
+    votes_count: int = Field(default=0, alias="votes-count")
+
+
+class Alias(MBModel):
+    """An alternative name for an entity."""
+
+    name: str
+    sort_name: str = Field(alias="sort-name")
+    type: str | None = None
+    type_id: str | None = Field(default=None, alias="type-id")
+    locale: str | None = None
+    primary: bool | None = None
+    begin: str | None = None
+    end: str | None = None
+    ended: bool = False
+
+
+class ArtistStub(MBModel):
+    """Minimal artist reference embedded in artist credits."""
+
+    id: str
+    name: str
+    sort_name: str = Field(alias="sort-name")
+    disambiguation: str = ""
+    type: str | None = None
+    type_id: str | None = Field(default=None, alias="type-id")
+
+
+class ArtistCredit(MBModel):
+    """An artist credit entry (artist + join phrase)."""
+
+    name: str = ""
+    artist: ArtistStub
+    joinphrase: str = ""
+
+
+class TextRepresentation(MBModel):
+    """Language and script of a release."""
+
+    language: str | None = None
+    script: str | None = None
+
+
+class ReleaseEvent(MBModel):
+    """A release event (date + area)."""
+
+    date: str | None = None
+    area: AreaStub | None = None
