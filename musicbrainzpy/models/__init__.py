@@ -23,11 +23,11 @@ from musicbrainzpy.models.instrument import Instrument
 from musicbrainzpy.models.label import Label
 from musicbrainzpy.models.place import Coordinates, Place
 from musicbrainzpy.models.recording import Recording
-from musicbrainzpy.models.release import LabelInfo, LabelStub, Medium, Release, Track
+from musicbrainzpy.models.release import CoverArtArchive, LabelInfo, LabelStub, Medium, Release, ReleaseGroupStub, Track
 from musicbrainzpy.models.release_group import ReleaseGroup
 from musicbrainzpy.models.series import Series
 from musicbrainzpy.models.url import Url
-from musicbrainzpy.models.work import Work
+from musicbrainzpy.models.work import Work, WorkAttribute
 
 __all__ = [
     "Alias",
@@ -37,6 +37,7 @@ __all__ = [
     "ArtistCredit",
     "ArtistStub",
     "Coordinates",
+    "CoverArtArchive",
     "Event",
     "Genre",
     "GenreFull",
@@ -53,10 +54,12 @@ __all__ = [
     "Release",
     "ReleaseEvent",
     "ReleaseGroup",
+    "ReleaseGroupStub",
     "Series",
     "Tag",
     "TextRepresentation",
     "Track",
     "Url",
     "Work",
+    "WorkAttribute",
 ]

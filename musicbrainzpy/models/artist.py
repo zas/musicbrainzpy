@@ -24,11 +24,14 @@ class Artist(MBModel):
     disambiguation: str = ""
     type: str | None = None
     type_id: str | None = Field(default=None, alias="type-id")
+    gender: str | None = None
+    gender_id: str | None = Field(default=None, alias="gender-id")
     country: str | None = None
     area: AreaStub | None = None
     begin_area: AreaStub | None = Field(default=None, alias="begin-area")
     end_area: AreaStub | None = Field(default=None, alias="end-area")
     life_span: LifeSpan | None = Field(default=None, alias="life-span")
+    ipis: list[str] = Field(default_factory=list)
     isnis: list[str] = Field(default_factory=list)
     # Optional inc= fields
     aliases: list[Alias] | None = None

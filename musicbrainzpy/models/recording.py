@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from musicbrainzpy.models.common import ArtistCredit, Genre, MBModel, Tag
+from musicbrainzpy.models.common import ArtistCredit, Genre, MBModel, Rating, Tag
 
 
 class Recording(MBModel):
@@ -21,3 +21,4 @@ class Recording(MBModel):
     # Optional inc= fields
     tags: list[Tag] | None = None
     genres: list[Genre] | None = None
+    rating: Rating | None = None

@@ -28,6 +28,8 @@ class Label(MBModel):
     country: str | None = None
     area: AreaStub | None = None
     life_span: LifeSpan | None = Field(default=None, alias="life-span")
+    ipis: list[str] = Field(default_factory=list)
+    isnis: list[str] = Field(default_factory=list)
     # Optional inc= fields
     aliases: list[Alias] | None = None
     tags: list[Tag] | None = None

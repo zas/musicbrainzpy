@@ -17,6 +17,7 @@ class ReleaseGroup(MBModel):
     primary_type: str | None = Field(default=None, alias="primary-type")
     primary_type_id: str | None = Field(default=None, alias="primary-type-id")
     secondary_types: list[str] = Field(default_factory=list, alias="secondary-types")
+    secondary_type_ids: list[str] = Field(default_factory=list, alias="secondary-type-ids")
     first_release_date: str | None = Field(default=None, alias="first-release-date")
     artist_credit: list[ArtistCredit] | None = Field(default=None, alias="artist-credit")
     # Optional inc= fields
