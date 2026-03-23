@@ -5,7 +5,8 @@ Rules for AI agents working on this project.
 ## Architecture
 
 - Python package: `musicbrainzpy/`
-- Async-first client built on `httpx`, with sync wrapper
+- Async-first client in `client.py` built on `httpx.AsyncClient`
+- Sync client in `sync_client.py` built on `httpx.Client`
 - Pydantic v2 models for all MusicBrainz entities
 - `DEFAULT_BASE_URL` in `client.py`, overridable via constructor
 - Rate limiter in `_ratelimit.py` enforces 1 req/s
@@ -43,7 +44,7 @@ Rules for AI agents working on this project.
 ## Common Pitfalls
 
 - Release ID ≠ Release Group ID — never interchangeable
-- The JSON API uses `fmt=json` query param or `Accept: application/json` header
+- The JSON API uses `Accept: application/json` header
 - Submissions (POST) require XML bodies — the only XML in the project
 - Rate limit is 1 request per second, not per endpoint
 - `inc=` values are joined with `+` in the URL
