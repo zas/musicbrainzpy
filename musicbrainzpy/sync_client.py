@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import httpx
@@ -54,7 +55,7 @@ class SyncMusicBrainzClient:
     def __exit__(self, *exc: object) -> None:
         self.close()
 
-    def _get(self, path: str, params: dict[str, str] | None = None) -> dict[str, Any]:
+    def _get(self, path: str, params: Mapping[str, str | list[str]] | None = None) -> dict[str, Any]:
         """Perform a rate-limited GET request and return parsed JSON."""
         self._rate_limiter.acquire()
         url = self._base_url + path
@@ -181,4 +182,4 @@ class SyncMusicBrainzClient:
     def lookup_by_url(self, *urls: str) -> dict[str, Any]:
         """Look up URL entities. See :meth:`MusicBrainzClient.lookup_by_url`."""
         params: dict[str, str | list[str]] = {"resource": list(urls)} if len(urls) > 1 else {"resource": urls[0]}
-        return self._get("url", params)  # type: ignore[arg-type]
+        return self._get("url", params)

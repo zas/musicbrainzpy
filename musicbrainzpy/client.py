@@ -6,6 +6,7 @@ Handles rate limiting, User-Agent, and error mapping.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -183,7 +184,7 @@ class MusicBrainzClient:
         """Whether any authentication method is configured."""
         return self._digest_auth is not None or self._oauth is not None
 
-    async def _get(self, path: str, params: dict[str, str] | None = None) -> dict[str, Any]:
+    async def _get(self, path: str, params: Mapping[str, str | list[str]] | None = None) -> dict[str, Any]:
         """Perform a rate-limited GET request and return parsed JSON."""
         await self._rate_limiter.acquire()
         url = self._base_url + path
@@ -457,7 +458,7 @@ class MusicBrainzClient:
             urls: One or more URLs to look up (max 100).
         """
         params: dict[str, str | list[str]] = {"resource": list(urls)} if len(urls) > 1 else {"resource": urls[0]}
-        return await self._get("url", params)  # type: ignore[arg-type]
+        return await self._get("url", params)
 
     # --- Submissions (require auth) ---
 
