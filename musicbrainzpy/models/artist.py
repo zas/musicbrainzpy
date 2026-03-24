@@ -13,6 +13,10 @@ from musicbrainzpy.models.common import (
     Rating,
     Tag,
 )
+from musicbrainzpy.models.recording import Recording
+from musicbrainzpy.models.release import Release
+from musicbrainzpy.models.release_group import ReleaseGroup
+from musicbrainzpy.models.work import Work
 
 
 class Artist(MBModel):
@@ -33,9 +37,14 @@ class Artist(MBModel):
     life_span: LifeSpan | None = Field(default=None, alias="life-span")
     ipis: list[str] = Field(default_factory=list)
     isnis: list[str] = Field(default_factory=list)
+    score: int | None = None  # search results only
     # Optional inc= fields
     aliases: list[Alias] | None = None
     tags: list[Tag] | None = None
     genres: list[Genre] | None = None
     rating: Rating | None = None
     annotation: str | None = None
+    releases: list[Release] | None = None
+    release_groups: list[ReleaseGroup] | None = Field(default=None, alias="release-groups")
+    recordings: list[Recording] | None = None
+    works: list[Work] | None = None

@@ -26,6 +26,7 @@ class Place(MBModel):
     area: AreaStub | None = None
     coordinates: Coordinates | None = None
     life_span: LifeSpan | None = Field(default=None, alias="life-span")
+    score: int | None = None  # search results only
     # Optional inc= fields
     aliases: list[Alias] | None = None
     tags: list[Tag] | None = None

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from musicbrainzpy.models.common import ArtistCredit, Genre, MBModel, Rating, Tag
+from musicbrainzpy.models.common import Alias, ArtistCredit, Genre, MBModel, Rating, Tag
 from musicbrainzpy.models.release import Release
 
 
@@ -20,7 +20,12 @@ class ReleaseGroup(MBModel):
     secondary_type_ids: list[str] = Field(default_factory=list, alias="secondary-type-ids")
     first_release_date: str | None = Field(default=None, alias="first-release-date")
     artist_credit: list[ArtistCredit] | None = Field(default=None, alias="artist-credit")
+    score: int | None = None  # search results only
+    count: int | None = None  # search results only
+    artist_credit_id: str | None = Field(default=None, alias="artist-credit-id")  # search results only
+    type_id: str | None = Field(default=None, alias="type-id")  # search results only
     # Optional inc= fields
+    aliases: list[Alias] | None = None
     releases: list[Release] | None = None
     tags: list[Tag] | None = None
     genres: list[Genre] | None = None
