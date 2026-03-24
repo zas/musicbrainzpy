@@ -58,6 +58,7 @@ class SyncMusicBrainzClient:
         _user = username or os.environ.get(f"{_ENV_PREFIX}USERNAME")
         _pass = password or os.environ.get(f"{_ENV_PREFIX}PASSWORD")
         self._base_url = _base.rstrip("/") + "/"
+        self._client_id = f"{_app}-{_ver}"
         self._rate_limiter = SyncRateLimiter(interval=rate_limit)
         self._max_retries = max_retries
         self._retry_base_delay = retry_base_delay

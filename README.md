@@ -122,14 +122,14 @@ await oauth.exchange_code("authorization-code")
 client = MusicBrainzClient("myapp", "1.0", "me@example.com", oauth=oauth)
 
 # Then submit
-await client.submit_tags("myapp-1.0", {"artist": {mbid: ["rock", "metal"]}})
-await client.submit_ratings("myapp-1.0", {"artist": {mbid: 80}})
-await client.submit_barcodes("myapp-1.0", {release_mbid: "4050538793819"})
-await client.submit_isrcs("myapp-1.0", {recording_mbid: ["USEE10100063"]})
+await client.submit_tags({"artist": {mbid: ["rock", "metal"]}})
+await client.submit_ratings({"artist": {mbid: 80}})
+await client.submit_barcodes({release_mbid: "4050538793819"})
+await client.submit_isrcs({recording_mbid: ["USEE10100063"]})
 
 # Collection management
-await client.collection_add("myapp-1.0", collection_mbid, "releases", [mbid])
-await client.collection_remove("myapp-1.0", collection_mbid, "releases", [mbid])
+await client.collection_add(collection_mbid, "releases", [mbid])
+await client.collection_remove(collection_mbid, "releases", [mbid])
 ```
 
 ### Cover Art Archive

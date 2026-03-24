@@ -224,14 +224,13 @@ musicbrainzngs.submit_barcodes({release_mbid: "4050538793819"})
 musicbrainzngs.submit_isrcs({recording_mbid: ["USEE10100063"]})
 
 # musicbrainzpy (async)
-await client.submit_tags("myapp-1.0", {"artist": {mbid: ["rock", "metal"]}})
-await client.submit_ratings("myapp-1.0", {"artist": {mbid: 80}})
-await client.submit_barcodes("myapp-1.0", {release_mbid: "4050538793819"})
-await client.submit_isrcs("myapp-1.0", {recording_mbid: ["USEE10100063"]})
+await client.submit_tags({"artist": {mbid: ["rock", "metal"]}})
+await client.submit_ratings({"artist": {mbid: 80}})
+await client.submit_barcodes({release_mbid: "4050538793819"})
+await client.submit_isrcs({recording_mbid: ["USEE10100063"]})
 ```
 
 Key differences:
-- musicbrainzpy requires a `client_id` string (e.g. `"myapp-1.0"`) as the first argument
 - Tags/ratings are nested under entity type: `{"artist": {mbid: ...}}` instead of `artist_tags={mbid: ...}`
 
 ## Collections
@@ -251,8 +250,8 @@ collections = client.get_collections()  # list[Collection]
 result = client.browse_typed("release", linked_type="collection", linked_id=collection_mbid, limit=100)
 
 # musicbrainzpy — add/remove (async, requires auth, supports any entity type)
-await client.collection_add("myapp-1.0", collection_mbid, "releases", [release_mbid])
-await client.collection_remove("myapp-1.0", collection_mbid, "releases", [release_mbid])
+await client.collection_add(collection_mbid, "releases", [release_mbid])
+await client.collection_remove(collection_mbid, "releases", [release_mbid])
 ```
 
 ## Cover Art
@@ -365,12 +364,12 @@ except MusicBrainzError as e:
 | `browse_labels(release=id)` | `client.browse_typed("label", linked_type="release", linked_id=id)` |
 | `browse_events(artist=id)` | `client.browse_typed("event", linked_type="artist", linked_id=id)` |
 | `browse_places(area=id)` | `client.browse_typed("place", linked_type="area", linked_id=id)` |
-| `submit_tags(artist_tags={})` | `await client.submit_tags(client_id, {"artist": {}})` |
-| `submit_ratings(artist_ratings={})` | `await client.submit_ratings(client_id, {"artist": {}})` |
-| `submit_barcodes({id: barcode})` | `await client.submit_barcodes(client_id, {id: barcode})` |
-| `submit_isrcs({id: [isrc]})` | `await client.submit_isrcs(client_id, {id: [isrc]})` |
-| `add_releases_to_collection(coll, ids)` | `await client.collection_add(client_id, coll, "releases", ids)` |
-| `remove_releases_from_collection(coll, ids)` | `await client.collection_remove(client_id, coll, "releases", ids)` |
+| `submit_tags(artist_tags={})` | `await client.submit_tags({"artist": {}})` |
+| `submit_ratings(artist_ratings={})` | `await client.submit_ratings({"artist": {}})` |
+| `submit_barcodes({id: barcode})` | `await client.submit_barcodes({id: barcode})` |
+| `submit_isrcs({id: [isrc]})` | `await client.submit_isrcs({id: [isrc]})` |
+| `add_releases_to_collection(coll, ids)` | `await client.collection_add(coll, "releases", ids)` |
+| `remove_releases_from_collection(coll, ids)` | `await client.collection_remove(coll, "releases", ids)` |
 | `get_collections()` | `client.get_collections()` |
 | `get_releases_in_collection(coll, limit)` | `client.browse_typed("release", linked_type="collection", linked_id=coll, limit=limit)` |
 | `get_image_list(release_id)` | `caa.get_image_list(release_id)` |
