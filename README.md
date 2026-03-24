@@ -4,12 +4,47 @@ Modern Python bindings for the [MusicBrainz](https://musicbrainz.org/) JSON API.
 
 Thin wrapper around the [MusicBrainz Web Service v2](https://musicbrainz.org/doc/MusicBrainz_API) — handles rate limiting, authentication, and (de)serialization via Pydantic models. All responses use the JSON API (`Accept: application/json`).
 
+## Why musicbrainzpy over musicbrainzngs?
+
+| | musicbrainzngs | musicbrainzpy |
+|---|---|---|
+| API format | XML (parsed to dicts) | JSON (native) |
+| Return types | Plain dicts with `-list` suffixes | Pydantic models with IDE autocompletion |
+| Architecture | Global module state | Instance-based clients |
+| Async | No | Yes (+ sync client) |
+| Auth | Digest only | Digest + OAuth2 (PKCE, refresh, revoke) |
+| Error handling | Generic exceptions | Typed exceptions + automatic retry with backoff |
+| Maintenance | Inactive since 2023 | Active |
+| Entity coverage | Missing newer entities/fields | All 13 entity types, forward-compatible with new API fields |
+| Python | 2.7+ | 3.10+ |
+| HTTP | urllib | httpx (connection pooling, HTTP/2, timeouts) |
+| Cover Art Archive | Raw bytes only | Typed client with image listings and metadata |
+
+Key improvements:
+
+- **One method instead of dozens** — `lookup_typed("artist", mbid)` replaces `get_artist_by_id`, `get_release_by_id`, `get_recording_by_id`, etc.
+- **Lucene queries directly** — no leaky abstraction that builds queries from kwargs
+- **Multiple clients** — different configs, auth, rate limits running concurrently without conflicts
+- **Resilient** — automatic retry on transient failures (connection errors, 429/503), respects `Retry-After`
+- **Zero-config** — set `MUSICBRAINZPY_*` env vars once, construct clients with no arguments
+
+Coming from musicbrainzngs? See the [migration guide](docs/migrating-from-ngs.md).
+
 ## Requirements
 
 - Python 3.10+
-- [uv](https://docs.astral.sh/uv/)
+- [httpx](https://www.python-httpx.org/) ≥ 0.28
+- [Pydantic](https://docs.pydantic.dev/) ≥ 2.10
 
 ## Installation
+
+As a dependency in another project:
+
+```bash
+uv add "musicbrainzpy @ git+https://github.com/zas/musicbrainzpy.git"
+```
+
+From source:
 
 ```bash
 git clone https://github.com/zas/musicbrainzpy.git
@@ -97,16 +132,6 @@ await client.collection_add("myapp-1.0", collection_mbid, "releases", [mbid])
 await client.collection_remove("myapp-1.0", collection_mbid, "releases", [mbid])
 ```
 
-### Annotation helpers
-
-```python
-from musicbrainzpy import annotation_to_text, annotation_to_markdown
-
-# Convert MusicBrainz wiki markup to plain text or Markdown
-plain = annotation_to_text(artist.annotation)
-md = annotation_to_markdown(artist.annotation)
-```
-
 ### Cover Art Archive
 
 ```python
@@ -128,6 +153,16 @@ with SyncCoverArtClient("myapp", "1.0", "me@example.com") as caa:
 ```
 
 Async version: `CoverArtClient` with the same methods (all `await`-able).
+
+### Annotation helpers
+
+```python
+from musicbrainzpy import annotation_to_text, annotation_to_markdown
+
+# Convert MusicBrainz wiki markup to plain text or Markdown
+plain = annotation_to_text(artist.annotation)
+md = annotation_to_markdown(artist.annotation)
+```
 
 ### Environment variables
 
@@ -155,7 +190,12 @@ client = SyncMusicBrainzClient()
 
 See [docs/oauth2.md](docs/oauth2.md) for the full OAuth2 guide with PKCE, token refresh, and examples.
 
-Coming from **musicbrainzngs**? See the [migration guide](docs/migrating-from-ngs.md).
+More examples in the [examples/](examples/) directory:
+
+```bash
+uv run python examples/search_artists.py
+uv run python examples/cover_art.py
+```
 
 ## Development
 
