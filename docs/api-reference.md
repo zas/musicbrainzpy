@@ -181,3 +181,4 @@ Client defaults can be set via environment variables. Explicit constructor argum
 | `MUSICBRAINZPY_BASE_URL` | `base_url` |
 | `MUSICBRAINZPY_USERNAME` | `username` |
 | `MUSICBRAINZPY_PASSWORD` | `password` |
+| `MUSICBRAINZPY_DEBUG` | Enable debug logging (set to any value) |

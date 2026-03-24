@@ -176,6 +176,7 @@ Client defaults can be set via environment variables (explicit constructor args 
 | `MUSICBRAINZPY_BASE_URL` | `base_url` |
 | `MUSICBRAINZPY_USERNAME` | `username` |
 | `MUSICBRAINZPY_PASSWORD` | `password` |
+| `MUSICBRAINZPY_DEBUG` | Enable debug logging (set to any value) |
 
 ```bash
 export MUSICBRAINZPY_APP=myapp

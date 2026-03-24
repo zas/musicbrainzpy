@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import logging
+import os
+
 from musicbrainzpy.annotation import annotation_to_markdown, annotation_to_text
 from musicbrainzpy.auth import OAuthHandler, OAuthToken, build_authorization_url, generate_pkce
 from musicbrainzpy.client import BrowseResult, MusicBrainzClient, SearchResult
@@ -15,6 +18,9 @@ from musicbrainzpy.exceptions import (
     RateLimitedError,
 )
 from musicbrainzpy.sync_client import SyncMusicBrainzClient
+
+if os.environ.get("MUSICBRAINZPY_DEBUG"):
+    logging.getLogger("musicbrainzpy").setLevel(logging.DEBUG)
 
 __all__ = [
     "AuthenticationError",
