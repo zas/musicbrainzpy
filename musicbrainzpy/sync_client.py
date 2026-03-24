@@ -13,7 +13,8 @@ from musicbrainzpy._retry import DEFAULT_BASE_DELAY, DEFAULT_MAX_RETRIES, sync_r
 from musicbrainzpy.auth import make_digest_auth
 from musicbrainzpy.client import (
     _ENV_PREFIX,
-    DEFAULT_BASE_URL,
+    DEFAULT_API_VERSION,
+    DEFAULT_SERVER_URL,
     BrowseResult,
     SearchResult,
     _build_user_agent,
@@ -39,6 +40,7 @@ class SyncMusicBrainzClient:
         app_contact: str | None = None,
         *,
         base_url: str | None = None,
+        api_version: str = DEFAULT_API_VERSION,
         rate_limit: float = 1.0,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_base_delay: float = DEFAULT_BASE_DELAY,
@@ -54,7 +56,7 @@ class SyncMusicBrainzClient:
                 "(pass them directly or set MUSICBRAINZPY_APP, MUSICBRAINZPY_VERSION, MUSICBRAINZPY_CONTACT)"
             )
             raise ValueError(msg)
-        _base = base_url or os.environ.get(f"{_ENV_PREFIX}BASE_URL") or DEFAULT_BASE_URL
+        _base = base_url or os.environ.get(f"{_ENV_PREFIX}BASE_URL") or f"{DEFAULT_SERVER_URL}/ws/{api_version}/"
         _user = username or os.environ.get(f"{_ENV_PREFIX}USERNAME")
         _pass = password or os.environ.get(f"{_ENV_PREFIX}PASSWORD")
         self._base_url = _base.rstrip("/") + "/"
