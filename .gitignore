@@ -19,6 +19,14 @@ build/
 *.swp
 *.swo
 
+# AI agents
+.kiro/
+.cursor/
+.windsurf/
+.aider*
+.cline/
+.roo/
+
 # OS
 .DS_Store
 
