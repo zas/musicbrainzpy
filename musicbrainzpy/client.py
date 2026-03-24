@@ -45,7 +45,9 @@ from musicbrainzpy.models import (
     Work,
 )
 
-DEFAULT_BASE_URL = "https://musicbrainz.org/ws/2/"
+DEFAULT_SERVER_URL = "https://musicbrainz.org"
+DEFAULT_API_VERSION = "2"
+DEFAULT_BASE_URL = f"{DEFAULT_SERVER_URL}/ws/{DEFAULT_API_VERSION}/"
 
 #: Environment variable prefix for configuration overrides.
 _ENV_PREFIX = "MUSICBRAINZPY_"
@@ -153,7 +155,10 @@ class MusicBrainzClient:
         app_name: Application name for User-Agent. Falls back to ``MUSICBRAINZPY_APP``.
         app_version: Application version for User-Agent. Falls back to ``MUSICBRAINZPY_VERSION``.
         app_contact: Contact URL or email for User-Agent. Falls back to ``MUSICBRAINZPY_CONTACT``.
-        base_url: API base URL. Falls back to ``MUSICBRAINZPY_BASE_URL``, then the official endpoint.
+        base_url: API base URL. Falls back to ``MUSICBRAINZPY_BASE_URL``, then built from
+            ``api_version``. When set explicitly, ``api_version`` is ignored.
+        api_version: API version string (default ``"2"``). Used to build the base URL
+            when ``base_url`` is not set: ``https://musicbrainz.org/ws/{api_version}/``.
         rate_limit: Minimum seconds between requests. Set to 0 to disable.
         max_retries: Maximum retries on transient failures. Set to 0 to disable.
         retry_base_delay: Base delay in seconds for exponential backoff.
@@ -169,6 +174,7 @@ class MusicBrainzClient:
         app_contact: str | None = None,
         *,
         base_url: str | None = None,
+        api_version: str = DEFAULT_API_VERSION,
         rate_limit: float = 1.0,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_base_delay: float = DEFAULT_BASE_DELAY,
@@ -185,7 +191,7 @@ class MusicBrainzClient:
                 "(pass them directly or set MUSICBRAINZPY_APP, MUSICBRAINZPY_VERSION, MUSICBRAINZPY_CONTACT)"
             )
             raise ValueError(msg)
-        _base = base_url or os.environ.get(f"{_ENV_PREFIX}BASE_URL") or DEFAULT_BASE_URL
+        _base = base_url or os.environ.get(f"{_ENV_PREFIX}BASE_URL") or f"{DEFAULT_SERVER_URL}/ws/{api_version}/"
         _user = username or os.environ.get(f"{_ENV_PREFIX}USERNAME")
         _pass = password or os.environ.get(f"{_ENV_PREFIX}PASSWORD")
         self._base_url = _base.rstrip("/") + "/"
