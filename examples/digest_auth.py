@@ -19,14 +19,24 @@ async def main() -> None:
         username=username,
         password=password,
     ) as mb:
-        # inc=user-collections is required to include private collections;
-        # without it, only public collections are returned.
-        data = await mb.browse("collection", linked_type="editor", linked_id=username, includes=["user-collections"])
-        print(f"\nCollections for {username} ({data['collection-count']} total):\n")
-        for c in data["collections"]:
-            entity = c["entity-type"]
-            count = c.get(f"{entity}-count", 0)
-            print(f"  {c['name']} ({entity}, {count} items)")
+        # get_collections() returns the authenticated user's collections
+        # (both public and private).
+        collections = await mb.get_collections()
+        print(f"\nCollections for {username} ({len(collections)} total):\n")
+
+        for coll in collections:
+            print(f"  {coll.name} ({coll.entity_type})")
+
+            # Browse the first 5 items in each collection.
+            result = await mb.browse_typed(coll.entity_type, linked_type="collection", linked_id=coll.id, limit=5)
+            if not result.items:
+                print("    (empty)")
+            for item in result.items:
+                label = getattr(item, "title", None) or getattr(item, "name", None) or item.id
+                print(f"    - {label}")
+            if result.count > 5:
+                print(f"    ... and {result.count - 5} more")
+            print()
 
         # Submit a tag — digest auth is sent automatically.
         # Uncomment to try (will raise AuthenticationError with wrong password):
