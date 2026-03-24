@@ -32,7 +32,7 @@ async def main() -> None:
             if not result.items:
                 print("    (empty)")
             for item in result.items:
-                label = getattr(item, "title", None) or getattr(item, "name", None) or item.id
+                label = getattr(item, "title", None) or getattr(item, "name", None) or str(item)
                 print(f"    - {label}")
             if result.count > 5:
                 print(f"    ... and {result.count - 5} more")

@@ -255,6 +255,43 @@ await client.collection_add("myapp-1.0", collection_mbid, "releases", [release_m
 await client.collection_remove("myapp-1.0", collection_mbid, "releases", [release_mbid])
 ```
 
+## Cover Art
+
+musicbrainzpy provides a separate client for the Cover Art Archive, imported from `musicbrainzpy.coverart` (or the top-level package).
+
+```python
+# musicbrainzngs
+images = musicbrainzngs.get_image_list("76df3287-6cda-33eb-8e9a-044b5e15ffdd")
+front = musicbrainzngs.get_image_front("76df3287-6cda-33eb-8e9a-044b5e15ffdd", size="500")
+back = musicbrainzngs.get_image_back("76df3287-6cda-33eb-8e9a-044b5e15ffdd")
+img = musicbrainzngs.get_image("76df3287-6cda-33eb-8e9a-044b5e15ffdd", "829521842", size="250")
+rg_images = musicbrainzngs.get_release_group_image_list("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932")
+rg_front = musicbrainzngs.get_release_group_image_front("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932")
+
+# musicbrainzpy (async)
+from musicbrainzpy import CoverArtClient
+
+async with CoverArtClient("myapp", "1.0", "me@example.com") as caa:
+    images = await caa.get_image_list("76df3287-6cda-33eb-8e9a-044b5e15ffdd")
+    front = await caa.get_front("76df3287-6cda-33eb-8e9a-044b5e15ffdd", size=500)
+    back = await caa.get_back("76df3287-6cda-33eb-8e9a-044b5e15ffdd")
+    img = await caa.get_image("76df3287-6cda-33eb-8e9a-044b5e15ffdd", "829521842", size=250)
+    rg_images = await caa.get_release_group_image_list("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932")
+    rg_front = await caa.get_release_group_front("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932")
+
+# musicbrainzpy (sync)
+from musicbrainzpy import SyncCoverArtClient
+
+with SyncCoverArtClient("myapp", "1.0", "me@example.com") as caa:
+    images = caa.get_image_list("76df3287-6cda-33eb-8e9a-044b5e15ffdd")
+    front = caa.get_front("76df3287-6cda-33eb-8e9a-044b5e15ffdd", size=500)
+```
+
+Key differences:
+- Separate client (`CoverArtClient` / `SyncCoverArtClient`) instead of module-level functions
+- `size` is an int (250, 500, 1200) instead of a string
+- Image listings return typed `CoverArtImageList` with `CoverArtImage` models instead of plain dicts
+
 ## Exceptions
 
 | musicbrainzngs | musicbrainzpy |
@@ -286,7 +323,6 @@ except MusicBrainzError as e:
 
 ## Features not yet in musicbrainzpy
 
-- **Cover Art Archive** — `get_image`, `get_image_front`, `get_image_back`, `get_image_list`, `get_release_group_image_list`, `get_release_group_image_front`
 - **Custom response parsers** — `set_parser()`, `set_format()`
 
 ## Quick reference
@@ -339,3 +375,9 @@ except MusicBrainzError as e:
 | `remove_releases_from_collection(coll, ids)` | `await client.collection_remove(client_id, coll, "releases", ids)` |
 | `get_collections()` | `client.get_collections()` |
 | `get_releases_in_collection(coll, limit)` | `client.browse_typed("release", linked_type="collection", linked_id=coll, limit=limit)` |
+| `get_image_list(release_id)` | `caa.get_image_list(release_id)` |
+| `get_release_group_image_list(rg_id)` | `caa.get_release_group_image_list(rg_id)` |
+| `get_image(mbid, cover_id, size)` | `caa.get_image(mbid, cover_id, size=size)` |
+| `get_image_front(release_id, size)` | `caa.get_front(release_id, size=size)` |
+| `get_image_back(release_id, size)` | `caa.get_back(release_id, size=size)` |
+| `get_release_group_image_front(rg_id, size)` | `caa.get_release_group_front(rg_id, size=size)` |
