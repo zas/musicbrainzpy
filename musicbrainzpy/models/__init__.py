@@ -19,6 +19,7 @@ from musicbrainzpy.models.common import (
     Tag,
     TextRepresentation,
 )
+from musicbrainzpy.models.coverart import CoverArtImage, CoverArtImageList, Thumbnails
 from musicbrainzpy.models.event import Event
 from musicbrainzpy.models.genre import GenreFull
 from musicbrainzpy.models.instrument import Instrument
@@ -42,6 +43,8 @@ __all__ = [
     "Collection",
     "Coordinates",
     "CoverArtArchive",
+    "CoverArtImage",
+    "CoverArtImageList",
     "Event",
     "Genre",
     "GenreFull",
@@ -62,6 +65,7 @@ __all__ = [
     "Series",
     "Tag",
     "TextRepresentation",
+    "Thumbnails",
     "Track",
     "Url",
     "Work",

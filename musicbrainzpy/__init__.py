@@ -5,6 +5,7 @@ from __future__ import annotations
 from musicbrainzpy.annotation import annotation_to_markdown, annotation_to_text
 from musicbrainzpy.auth import OAuthHandler, OAuthToken, build_authorization_url, generate_pkce
 from musicbrainzpy.client import BrowseResult, MusicBrainzClient, SearchResult
+from musicbrainzpy.coverart import CoverArtClient, SyncCoverArtClient
 from musicbrainzpy.enums import OAuthScope
 from musicbrainzpy.exceptions import (
     AuthenticationError,
@@ -18,6 +19,7 @@ from musicbrainzpy.sync_client import SyncMusicBrainzClient
 __all__ = [
     "AuthenticationError",
     "BrowseResult",
+    "CoverArtClient",
     "InvalidRequestError",
     "MusicBrainzClient",
     "MusicBrainzError",
@@ -27,6 +29,7 @@ __all__ = [
     "OAuthToken",
     "RateLimitedError",
     "SearchResult",
+    "SyncCoverArtClient",
     "SyncMusicBrainzClient",
     "annotation_to_markdown",
     "annotation_to_text",
