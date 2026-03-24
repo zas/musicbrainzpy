@@ -136,6 +136,23 @@ Annotations use MusicBrainz wiki markup. The `annotation` module provides conver
 
 See https://musicbrainz.org/doc/Annotation#Wiki_formatting for the markup spec.
 
+## Forward Compatibility
+
+All Pydantic models use `extra="allow"`, which means unknown fields returned by the API are preserved rather than discarded or rejected. If MusicBrainz adds a new field, your code won't break — the new field is stored in `model_extra`:
+
+```python
+artist = client.lookup_typed("artist", mbid)
+
+# Declared fields work as usual with IDE autocompletion
+artist.name     # "Metallica"
+artist.country  # "US"
+
+# New/unknown fields are preserved in model_extra
+artist.model_extra  # {"some-new-field": "value"}
+```
+
+Once a typed attribute is added to the model in a library update, the field moves from `model_extra` to a proper attribute — no behavior change for existing code.
+
 ## Cover Art Archive
 
 Separate API at `https://coverartarchive.org/`. No authentication or rate limiting required.
