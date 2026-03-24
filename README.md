@@ -109,6 +109,8 @@ md = annotation_to_markdown(artist.annotation)
 
 See [docs/oauth2.md](docs/oauth2.md) for the full OAuth2 guide with PKCE, token refresh, and examples.
 
+Coming from **musicbrainzngs**? See the [migration guide](docs/migrating-from-ngs.md).
+
 ## Development
 
 ```bash
