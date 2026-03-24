@@ -20,7 +20,12 @@ from musicbrainzpy.exceptions import (
 from musicbrainzpy.sync_client import SyncMusicBrainzClient
 
 if os.environ.get("MUSICBRAINZPY_DEBUG"):
-    logging.getLogger("musicbrainzpy").setLevel(logging.DEBUG)
+    _mblogger = logging.getLogger("musicbrainzpy")
+    _mblogger.setLevel(logging.DEBUG)
+    if not _mblogger.handlers:
+        _handler = logging.StreamHandler()
+        _handler.setFormatter(logging.Formatter("%(asctime)s %(name)s %(message)s"))
+        _mblogger.addHandler(_handler)
 
 __all__ = [
     "AuthenticationError",
