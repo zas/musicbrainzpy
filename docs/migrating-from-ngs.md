@@ -10,7 +10,7 @@ This guide helps you move from [python-musicbrainzngs](https://github.com/alasta
 | Architecture | Module-level global state | Instance-based clients |
 | Async support | No | Yes (+ sync client) |
 | Return types | Plain dicts | Pydantic models or dicts |
-| Python | 2.7+ / 3.x | 3.12+ |
+| Python | 2.7+ / 3.x | 3.10+ |
 | HTTP library | urllib | httpx |
 | Auth | Digest only | Digest + OAuth2 |
 

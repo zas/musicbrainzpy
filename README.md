@@ -6,7 +6,7 @@ Thin wrapper around the [MusicBrainz Web Service v2](https://musicbrainz.org/doc
 
 ## Requirements
 
-- Python 3.12+
+- Python 3.10+
 - [uv](https://docs.astral.sh/uv/)
 
 ## Installation

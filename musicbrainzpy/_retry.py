@@ -6,6 +6,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 import httpx
 
@@ -30,12 +31,15 @@ def _is_retryable(exc: Exception) -> bool:
     return isinstance(exc, (httpx.TransportError, RateLimitedError))
 
 
-async def async_retry[T](
-    func: Callable[[], Awaitable[T]],
+_T = TypeVar("_T")
+
+
+async def async_retry(
+    func: Callable[[], Awaitable[_T]],
     *,
     max_retries: int = DEFAULT_MAX_RETRIES,
     base_delay: float = DEFAULT_BASE_DELAY,
-) -> T:
+) -> _T:
     """Call *func* with retries on transient failures."""
     for attempt in range(max_retries + 1):
         try:
@@ -49,12 +53,12 @@ async def async_retry[T](
     raise AssertionError("unreachable")  # pragma: no cover
 
 
-def sync_retry[T](
-    func: Callable[[], T],
+def sync_retry(
+    func: Callable[[], _T],
     *,
     max_retries: int = DEFAULT_MAX_RETRIES,
     base_delay: float = DEFAULT_BASE_DELAY,
-) -> T:
+) -> _T:
     """Call *func* with retries on transient failures (sync version)."""
     for attempt in range(max_retries + 1):
         try:
