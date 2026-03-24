@@ -20,7 +20,7 @@ class Thumbnails(MBModel):
 class CoverArtImage(MBModel):
     """A single cover art image entry."""
 
-    id: str
+    id: int | str
     types: list[str] = Field(default_factory=list)
     front: bool = False
     back: bool = False
