@@ -53,6 +53,7 @@ class TestRaiseForStatus:
             (400, InvalidRequestError),
             (401, AuthenticationError),
             (404, NotFoundError),
+            (429, RateLimitedError),
             (503, RateLimitedError),
         ],
     )
@@ -60,6 +61,18 @@ class TestRaiseForStatus:
         response = httpx.Response(status, text="error")
         with pytest.raises(exc_class, match=f"HTTP {status}"):
             _raise_for_status(response)
+
+    def test_rate_limited_retry_after(self) -> None:
+        response = httpx.Response(429, text="slow down", headers={"Retry-After": "5"})
+        with pytest.raises(RateLimitedError) as exc_info:
+            _raise_for_status(response)
+        assert exc_info.value.retry_after == 5.0
+
+    def test_rate_limited_no_retry_after(self) -> None:
+        response = httpx.Response(503, text="overloaded")
+        with pytest.raises(RateLimitedError) as exc_info:
+            _raise_for_status(response)
+        assert exc_info.value.retry_after is None
 
     def test_unknown_error(self) -> None:
         response = httpx.Response(500, text="server error")
