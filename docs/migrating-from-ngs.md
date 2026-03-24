@@ -275,7 +275,6 @@ except MusicBrainzError as e:
 
 - **Cover Art Archive** — `get_image`, `get_image_front`, `get_image_back`, `get_image_list`, `get_release_group_image_list`, `get_release_group_image_front`
 - **`get_collections`** / **`get_releases_in_collection`** — browsing collection contents
-- **`search_annotations`** — annotation search
 - **Custom response parsers** — `set_parser()`, `set_format()`
 
 ## Quick reference
@@ -312,6 +311,7 @@ except MusicBrainzError as e:
 | `search_instruments(query, **fields)` | `client.search_typed("instrument", query)` |
 | `search_places(query, **fields)` | `client.search_typed("place", query)` |
 | `search_series(query, **fields)` | `client.search_typed("series", query)` |
+| `search_annotations(query, **fields)` | `client.search_typed("annotation", query)` |
 | `browse_releases(artist=id)` | `client.browse_typed("release", linked_type="artist", linked_id=id)` |
 | `browse_release_groups(artist=id)` | `client.browse_typed("release-group", linked_type="artist", linked_id=id)` |
 | `browse_recordings(artist=id)` | `client.browse_typed("recording", linked_type="artist", linked_id=id)` |

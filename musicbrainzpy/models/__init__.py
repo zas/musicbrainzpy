@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from musicbrainzpy.models.annotation import Annotation
 from musicbrainzpy.models.area import Area
 from musicbrainzpy.models.artist import Artist
 from musicbrainzpy.models.common import (
@@ -31,6 +32,7 @@ from musicbrainzpy.models.work import Work, WorkAttribute
 
 __all__ = [
     "Alias",
+    "Annotation",
     "Area",
     "AreaStub",
     "Artist",

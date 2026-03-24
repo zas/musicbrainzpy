@@ -80,6 +80,21 @@ DISCID_LOOKUP_RESPONSE = {
     ],
 }
 
+ANNOTATION_SEARCH_RESPONSE = {
+    "created": "2024-01-01T00:00:00.000Z",
+    "count": 1,
+    "offset": 0,
+    "annotations": [
+        {
+            "type": "release",
+            "score": 100,
+            "entity": "c94a690b-db5a-4890-bd47-8ca9d0fd07ba",
+            "name": "Beethoven: Symphony No. 2",
+            "text": "Composers\n    Beethoven",
+        }
+    ],
+}
+
 
 @pytest.fixture
 def client() -> MusicBrainzClient:
