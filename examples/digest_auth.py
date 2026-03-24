@@ -42,7 +42,6 @@ async def main() -> None:
         # Uncomment to try (will raise AuthenticationError with wrong password):
         # try:
         #     await mb.submit_tags(
-        #         "musicbrainzpy-examples-0.1.0",
         #         {"artist": {"30bbf75a-62d4-4d43-862b-91a224a0eb67": ["doom metal"]}},
         #     )
         #     print("\nTag submitted!")

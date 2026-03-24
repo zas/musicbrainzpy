@@ -189,6 +189,7 @@ class MusicBrainzClient:
         _user = username or os.environ.get(f"{_ENV_PREFIX}USERNAME")
         _pass = password or os.environ.get(f"{_ENV_PREFIX}PASSWORD")
         self._base_url = _base.rstrip("/") + "/"
+        self._client_id = f"{_app}-{_ver}"
         self._rate_limiter = RateLimiter(interval=rate_limit)
         self._max_retries = max_retries
         self._retry_base_delay = retry_base_delay
@@ -549,66 +550,60 @@ class MusicBrainzClient:
 
     # --- Submissions (require auth) ---
 
-    async def submit_tags(self, client_id: str, entities: dict[str, dict[str, list[str]]]) -> None:
+    async def submit_tags(self, entities: dict[str, dict[str, list[str]]]) -> None:
         """Submit tags/genres for entities.
 
         Args:
-            client_id: Application identifier (e.g. ``"myapp-1.0"``).
             entities: Mapping of entity type → {mbid: [tag_names]}.
         """
         body = build_tag_xml(entities)
-        await self._post("tag", params={"client": client_id}, body=body)
+        await self._post("tag", params={"client": self._client_id}, body=body)
 
-    async def submit_ratings(self, client_id: str, entities: dict[str, dict[str, int]]) -> None:
+    async def submit_ratings(self, entities: dict[str, dict[str, int]]) -> None:
         """Submit ratings for entities.
 
         Args:
-            client_id: Application identifier.
             entities: Mapping of entity type → {mbid: rating (0-100)}.
         """
         body = build_rating_xml(entities)
-        await self._post("rating", params={"client": client_id}, body=body)
+        await self._post("rating", params={"client": self._client_id}, body=body)
 
-    async def submit_barcodes(self, client_id: str, barcodes: dict[str, str]) -> None:
+    async def submit_barcodes(self, barcodes: dict[str, str]) -> None:
         """Submit barcodes for releases.
 
         Args:
-            client_id: Application identifier.
             barcodes: Mapping of release MBID → barcode (EAN/UPC).
         """
         body = build_barcode_xml(barcodes)
-        await self._post("release/", params={"client": client_id}, body=body)
+        await self._post("release/", params={"client": self._client_id}, body=body)
 
-    async def submit_isrcs(self, client_id: str, isrcs: dict[str, list[str]]) -> None:
+    async def submit_isrcs(self, isrcs: dict[str, list[str]]) -> None:
         """Submit ISRCs for recordings.
 
         Args:
-            client_id: Application identifier.
             isrcs: Mapping of recording MBID → list of ISRCs.
         """
         body = build_isrc_xml(isrcs)
-        await self._post("recording/", params={"client": client_id}, body=body)
+        await self._post("recording/", params={"client": self._client_id}, body=body)
 
-    async def collection_add(self, client_id: str, collection_id: str, entity_type: str, mbids: list[str]) -> None:
+    async def collection_add(self, collection_id: str, entity_type: str, mbids: list[str]) -> None:
         """Add entities to a collection.
 
         Args:
-            client_id: Application identifier.
             collection_id: MBID of the collection.
             entity_type: Entity type plural (e.g. ``"releases"``, ``"artists"``).
             mbids: List of entity MBIDs to add (max ~400).
         """
         ids = ";".join(mbids)
-        await self._put(f"collection/{collection_id}/{entity_type}/{ids}", params={"client": client_id})
+        await self._put(f"collection/{collection_id}/{entity_type}/{ids}", params={"client": self._client_id})
 
-    async def collection_remove(self, client_id: str, collection_id: str, entity_type: str, mbids: list[str]) -> None:
+    async def collection_remove(self, collection_id: str, entity_type: str, mbids: list[str]) -> None:
         """Remove entities from a collection.
 
         Args:
-            client_id: Application identifier.
             collection_id: MBID of the collection.
             entity_type: Entity type plural (e.g. ``"releases"``, ``"artists"``).
             mbids: List of entity MBIDs to remove.
         """
         ids = ";".join(mbids)
-        await self._delete(f"collection/{collection_id}/{entity_type}/{ids}", params={"client": client_id})
+        await self._delete(f"collection/{collection_id}/{entity_type}/{ids}", params={"client": self._client_id})

@@ -66,7 +66,7 @@ async def main():
     # Step 4: Use with the client
     async with MusicBrainzClient("myapp", "1.0", "me@example.com", oauth=oauth) as client:
         # Submit tags (requires 'tag' scope)
-        await client.submit_tags("myapp-1.0", {
+        await client.submit_tags({
             "artist": {"65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab": ["metal", "thrash"]}
         })
 
@@ -112,7 +112,7 @@ async def main():
     print(f"  refresh_token: {token.refresh_token}")
 
     async with MusicBrainzClient("myapp", "1.0", "me@example.com", oauth=oauth) as client:
-        await client.submit_ratings("myapp-1.0", {
+        await client.submit_ratings({
             "recording": {"ba5d0553-032f-4127-aed7-4d2e0d18f3f9": 80}
         })
 
@@ -135,7 +135,7 @@ oauth.set_token(
 
 # The client will auto-refresh if the token is expired
 async with MusicBrainzClient("myapp", "1.0", "me@example.com", oauth=oauth) as client:
-    await client.submit_tags("myapp-1.0", {"artist": {"some-mbid": ["jazz"]}})
+    await client.submit_tags({"artist": {"some-mbid": ["jazz"]}})
 ```
 
 ## Token Refresh
