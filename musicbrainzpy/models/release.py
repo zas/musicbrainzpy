@@ -5,6 +5,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from musicbrainzpy.models.common import (
+    Alias,
     ArtistCredit,
     Genre,
     MBModel,
@@ -27,9 +28,19 @@ class Track(MBModel):
     recording: RecordingModel | None = None
 
 
+class Disc(MBModel):
+    """A disc ID (CD TOC) attached to a medium."""
+
+    id: str
+    sectors: int = 0
+    offset_count: int = Field(default=0, alias="offset-count")
+    offsets: list[int] = Field(default_factory=list)
+
+
 class Medium(MBModel):
     """A medium (disc) within a release."""
 
+    id: str | None = None
     position: int = 0
     title: str = ""
     format: str | None = None
@@ -38,6 +49,7 @@ class Medium(MBModel):
     track_offset: int = Field(default=0, alias="track-offset")
     disc_count: int = Field(default=0, alias="disc-count")
     tracks: list[Track] | None = None
+    discs: list[Disc] | None = None
 
 
 class LabelInfo(MBModel):
@@ -53,6 +65,13 @@ class LabelStub(MBModel):
     id: str
     name: str
     disambiguation: str = ""
+    type: str | None = None
+    type_id: str | None = Field(default=None, alias="type-id")
+    sort_name: str | None = Field(default=None, alias="sort-name")
+    label_code: int | None = Field(default=None, alias="label-code")
+    aliases: list[Alias] | None = None
+    tags: list[Tag] | None = None
+    genres: list[Genre] | None = None
 
 
 # Rebuild LabelInfo now that LabelStub is defined
@@ -77,8 +96,14 @@ class ReleaseGroupStub(MBModel):
     disambiguation: str = ""
     primary_type: str | None = Field(default=None, alias="primary-type")
     primary_type_id: str | None = Field(default=None, alias="primary-type-id")
+    type_id: str | None = Field(default=None, alias="type-id")
     secondary_types: list[str] = Field(default_factory=list, alias="secondary-types")
     secondary_type_ids: list[str] = Field(default_factory=list, alias="secondary-type-ids")
+    first_release_date: str | None = Field(default=None, alias="first-release-date")
+    artist_credit: list[ArtistCredit] | None = Field(default=None, alias="artist-credit")
+    aliases: list[Alias] | None = None
+    tags: list[Tag] | None = None
+    genres: list[Genre] | None = None
 
 
 class Release(MBModel):
@@ -103,7 +128,12 @@ class Release(MBModel):
     media: list[Medium] | None = None
     label_info: list[LabelInfo] | None = Field(default=None, alias="label-info")
     cover_art_archive: CoverArtArchive | None = Field(default=None, alias="cover-art-archive")
+    score: int | None = None  # search results only
+    track_count: int | None = Field(default=None, alias="track-count")  # search results only
+    count: int | None = None  # search results only
+    artist_credit_id: str | None = Field(default=None, alias="artist-credit-id")  # search results only
     # Optional inc= fields
+    aliases: list[Alias] | None = None
     tags: list[Tag] | None = None
     genres: list[Genre] | None = None
     annotation: str | None = None

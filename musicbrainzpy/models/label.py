@@ -30,7 +30,9 @@ class Label(MBModel):
     life_span: LifeSpan | None = Field(default=None, alias="life-span")
     ipis: list[str] = Field(default_factory=list)
     isnis: list[str] = Field(default_factory=list)
+    score: int | None = None  # search results only
     # Optional inc= fields
+    releases: list[MBModel] | None = None  # inc=releases subquery
     aliases: list[Alias] | None = None
     tags: list[Tag] | None = None
     genres: list[Genre] | None = None

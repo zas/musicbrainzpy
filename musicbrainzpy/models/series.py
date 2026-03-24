@@ -15,6 +15,7 @@ class Series(MBModel):
     disambiguation: str = ""
     type: str | None = None
     type_id: str | None = Field(default=None, alias="type-id")
+    score: int | None = None  # search results only
     # Optional inc= fields
     aliases: list[Alias] | None = None
     tags: list[Tag] | None = None

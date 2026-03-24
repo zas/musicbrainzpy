@@ -35,7 +35,11 @@ class AreaStub(MBModel):
     name: str
     sort_name: str = Field(alias="sort-name")
     disambiguation: str = ""
+    type: str | None = None
+    type_id: str | None = Field(default=None, alias="type-id")
+    life_span: LifeSpan | None = Field(default=None, alias="life-span")
     iso_3166_1_codes: list[str] = Field(default_factory=list, alias="iso-3166-1-codes")
+    iso_3166_2_codes: list[str] = Field(default_factory=list, alias="iso-3166-2-codes")
 
 
 class Tag(MBModel):
@@ -73,6 +77,9 @@ class Alias(MBModel):
     begin: str | None = None
     end: str | None = None
     ended: bool | None = None
+    # Search API uses begin-date/end-date instead of begin/end
+    begin_date: str | None = Field(default=None, alias="begin-date")
+    end_date: str | None = Field(default=None, alias="end-date")
 
 
 class ArtistStub(MBModel):
@@ -84,6 +91,10 @@ class ArtistStub(MBModel):
     disambiguation: str = ""
     type: str | None = None
     type_id: str | None = Field(default=None, alias="type-id")
+    country: str | None = None
+    aliases: list[Alias] | None = None
+    tags: list[Tag] | None = None
+    genres: list[Genre] | None = None
 
 
 class ArtistCredit(MBModel):

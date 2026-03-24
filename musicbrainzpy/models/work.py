@@ -27,6 +27,8 @@ class Work(MBModel):
     languages: list[str] = Field(default_factory=list)
     iswcs: list[str] = Field(default_factory=list)
     attributes: list[WorkAttribute] = Field(default_factory=list)
+    relations: list[MBModel] | None = None
+    score: int | None = None  # search results only
     # Optional inc= fields
     aliases: list[Alias] | None = None
     tags: list[Tag] | None = None

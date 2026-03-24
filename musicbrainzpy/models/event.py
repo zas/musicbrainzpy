@@ -19,6 +19,8 @@ class Event(MBModel):
     life_span: LifeSpan | None = Field(default=None, alias="life-span")
     time: str | None = None
     setlist: str | None = None
+    score: int | None = None  # search results only
+    relations: list[MBModel] | None = None
     # Optional inc= fields
     aliases: list[Alias] | None = None
     tags: list[Tag] | None = None
