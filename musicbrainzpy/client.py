@@ -23,6 +23,7 @@ from musicbrainzpy.exceptions import (
     RateLimitedError,
 )
 from musicbrainzpy.models import (
+    Annotation,
     Area,
     Artist,
     Event,
@@ -52,6 +53,7 @@ _STATUS_EXCEPTIONS: dict[int, type[MusicBrainzError]] = {
 #: Maps entity type strings to (model_class, list_key_in_json).
 #: Search responses use the list key directly; browse uses it with -count/-offset suffixes.
 _ENTITY_MAP: dict[str, tuple[type[MBModel], str]] = {
+    "annotation": (Annotation, "annotations"),
     "area": (Area, "areas"),
     "artist": (Artist, "artists"),
     "event": (Event, "events"),

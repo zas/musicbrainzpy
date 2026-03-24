@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from musicbrainzpy.models import (
+    Annotation,
     Area,
     Artist,
     Event,
@@ -19,6 +20,14 @@ from musicbrainzpy.models import (
 )
 
 # --- Sample JSON payloads (derived from real API responses) ---
+
+ANNOTATION_JSON = {
+    "type": "release",
+    "score": 100,
+    "entity": "c94a690b-db5a-4890-bd47-8ca9d0fd07ba",
+    "name": "Beethoven: Symphony No. 2",
+    "text": "Composers\n    Beethoven, Ludwig van (1770-1827)",
+}
 
 ARTIST_JSON = {
     "id": "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
@@ -338,3 +347,12 @@ class TestUrl:
     def test_deserialize(self) -> None:
         u = Url.model_validate(URL_JSON)
         assert u.resource == "https://www.metallica.com/"
+
+
+class TestAnnotation:
+    def test_deserialize(self) -> None:
+        a = Annotation.model_validate(ANNOTATION_JSON)
+        assert a.type == "release"
+        assert a.entity == "c94a690b-db5a-4890-bd47-8ca9d0fd07ba"
+        assert a.name == "Beethoven: Symphony No. 2"
+        assert "Beethoven" in a.text

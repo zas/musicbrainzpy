@@ -21,8 +21,9 @@ from musicbrainzpy.exceptions import (
     NotFoundError,
     RateLimitedError,
 )
-from musicbrainzpy.models import Artist, Recording, Release, Work
+from musicbrainzpy.models import Annotation, Artist, Recording, Release, Work
 from tests.conftest import (
+    ANNOTATION_SEARCH_RESPONSE,
     ARTIST_LOOKUP_RESPONSE,
     ARTIST_SEARCH_RESPONSE,
     DISCID_LOOKUP_RESPONSE,
@@ -129,6 +130,14 @@ class TestSearch:
         result = await client.search("artist", "rock", limit=10, offset=5)
         assert result["count"] == 1
 
+    async def test_search_annotations(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        mock_api.get("/annotation", params={"query": "beethoven", "limit": "25", "offset": "0"}).mock(
+            return_value=httpx.Response(200, json=ANNOTATION_SEARCH_RESPONSE)
+        )
+        result = await client.search("annotation", "beethoven")
+        assert result["count"] == 1
+        assert result["annotations"][0]["type"] == "release"
+
 
 class TestBrowse:
     async def test_browse_releases(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
@@ -185,6 +194,16 @@ class TestSearchTyped:
         assert len(result.items) == 1
         assert isinstance(result.items[0], Artist)
         assert result.items[0].name == "Metallica"
+
+    async def test_search_annotations_typed(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        mock_api.get("/annotation", params={"query": "beethoven", "limit": "25", "offset": "0"}).mock(
+            return_value=httpx.Response(200, json=ANNOTATION_SEARCH_RESPONSE)
+        )
+        result = await client.search_typed("annotation", "beethoven")
+        assert isinstance(result, SearchResult)
+        assert result.count == 1
+        assert isinstance(result.items[0], Annotation)
+        assert result.items[0].entity == "c94a690b-db5a-4890-bd47-8ca9d0fd07ba"
 
 
 class TestBrowseTyped:
