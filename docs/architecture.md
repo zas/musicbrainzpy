@@ -63,10 +63,26 @@ The base URL is configurable via the client constructor to support mirrors and l
 - Max 1 request per second (API requirement)
 - Implemented as a simple timestamp check with `asyncio.sleep()`
 
+## Retry
+
+- Transient failures (`httpx.TransportError`, HTTP 429/503) are retried with exponential backoff
+- Default: 3 retries with 1s base delay (1s, 2s, 4s)
+- Respects `Retry-After` header when present
+- Configurable via `max_retries` and `retry_base_delay` constructor params
+- Permanent errors (400, 401, 404) are never retried
+
 ## Authentication
 
 - Digest auth (via `httpx.DigestAuth`) — current standard
 - OAuth2 — for user-scoped operations (tags, ratings, collections)
+
+## Cover Art Archive
+
+Separate client (`CoverArtClient` / `SyncCoverArtClient`) for the Cover Art Archive API at `coverartarchive.org`. Different host, no auth, no rate limiting. Supports image listings, binary downloads, and HEAD-based metadata queries.
+
+## Environment Variables
+
+Client defaults can be set via `MUSICBRAINZPY_`-prefixed environment variables. Explicit constructor arguments always take precedence. Supported: `APP`, `VERSION`, `CONTACT`, `BASE_URL`, `USERNAME`, `PASSWORD`.
 
 ## Module Layout
 
@@ -75,6 +91,7 @@ musicbrainzpy/
 ├── __init__.py          # Public API re-exports
 ├── client.py            # MusicBrainzClient (async)
 ├── sync_client.py       # SyncMusicBrainzClient (sync wrapper)
+├── coverart.py          # CoverArtClient / SyncCoverArtClient (Cover Art Archive)
 ├── models/              # Pydantic models per entity type
 │   ├── __init__.py      # Re-exports all models
 │   ├── common.py        # Shared: ArtistCredit, LifeSpan, Tag, Genre, etc.
@@ -90,19 +107,25 @@ musicbrainzpy/
 │   ├── instrument.py
 │   ├── series.py
 │   ├── genre.py
-│   └── url.py
+│   ├── url.py
+│   ├── annotation.py    # Annotation search result model
+│   ├── collection.py    # Collection model
+│   └── coverart.py      # CoverArtImage, CoverArtImageList, Thumbnails
 ├── enums.py             # EntityType, ReleaseStatus, ReleaseGroupType, etc.
 ├── auth.py              # OAuth2 flow helpers
 ├── exceptions.py        # MusicBrainzError, NotFoundError, RateLimitedError, etc.
 ├── annotation.py        # Wiki markup → plain text / Markdown converter
 ├── _xml.py              # XML body builders for submissions
 ├── _ratelimit.py        # Async/sync rate limiter
+├── _retry.py            # Retry with exponential backoff for transient failures
 └── py.typed             # PEP 561 marker
 tests/
 ├── conftest.py          # respx fixtures, sample JSON responses
 ├── test_client.py       # Lookup/browse/search integration tests
 ├── test_sync_client.py  # Sync wrapper tests
 ├── test_models.py       # Deserialization round-trip tests
+├── test_coverart.py     # Cover Art Archive client tests
+├── test_retry.py        # Retry logic tests
 ├── test_xml.py          # XML body builder tests
 ├── test_oauth.py        # OAuth2 flow tests
 └── test_annotation.py   # Annotation converter tests
