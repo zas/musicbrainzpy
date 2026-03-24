@@ -21,11 +21,12 @@ from musicbrainzpy.exceptions import (
     NotFoundError,
     RateLimitedError,
 )
-from musicbrainzpy.models import Annotation, Artist, Recording, Release, Work
+from musicbrainzpy.models import Annotation, Artist, Collection, Recording, Release, Work
 from tests.conftest import (
     ANNOTATION_SEARCH_RESPONSE,
     ARTIST_LOOKUP_RESPONSE,
     ARTIST_SEARCH_RESPONSE,
+    COLLECTION_LIST_RESPONSE,
     DISCID_LOOKUP_RESPONSE,
     ISRC_LOOKUP_RESPONSE,
     ISWC_LOOKUP_RESPONSE,
@@ -286,3 +287,18 @@ class TestAuth:
     async def test_delete_without_auth_raises(self, client: MusicBrainzClient) -> None:
         with pytest.raises(AuthenticationError, match="Authentication required"):
             await client._delete("collection/abc/releases/def", params={"client": "test-0.1"})
+
+
+class TestGetCollections:
+    async def test_returns_collections(self, mock_api: respx.MockRouter) -> None:
+        client = MusicBrainzClient("a", "1", "x", rate_limit=0, username="user", password="pass")
+        mock_api.get("/collection").mock(return_value=httpx.Response(200, json=COLLECTION_LIST_RESPONSE))
+        result = await client.get_collections()
+        assert len(result) == 1
+        assert isinstance(result[0], Collection)
+        assert result[0].name == "My Releases"
+        assert result[0].entity_type == "release"
+
+    async def test_without_auth_raises(self, client: MusicBrainzClient) -> None:
+        with pytest.raises(AuthenticationError, match="Authentication required"):
+            await client.get_collections()

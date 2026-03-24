@@ -5,6 +5,7 @@ from __future__ import annotations
 from musicbrainzpy.models.annotation import Annotation
 from musicbrainzpy.models.area import Area
 from musicbrainzpy.models.artist import Artist
+from musicbrainzpy.models.collection import Collection
 from musicbrainzpy.models.common import (
     Alias,
     AreaStub,
@@ -38,6 +39,7 @@ __all__ = [
     "Artist",
     "ArtistCredit",
     "ArtistStub",
+    "Collection",
     "Coordinates",
     "CoverArtArchive",
     "Event",

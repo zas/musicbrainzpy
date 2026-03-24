@@ -6,6 +6,7 @@ from musicbrainzpy.models import (
     Annotation,
     Area,
     Artist,
+    Collection,
     Event,
     GenreFull,
     Instrument,
@@ -27,6 +28,15 @@ ANNOTATION_JSON = {
     "entity": "c94a690b-db5a-4890-bd47-8ca9d0fd07ba",
     "name": "Beethoven: Symphony No. 2",
     "text": "Composers\n    Beethoven, Ludwig van (1770-1827)",
+}
+
+COLLECTION_JSON = {
+    "id": "005b5c07-cd88-32a4-805e-1d358ef1cfa3",
+    "name": "My Releases",
+    "editor": "testuser",
+    "entity-type": "release",
+    "type": "Release collection",
+    "type-id": "d94659b2-4ce5-3a98-b4b8-da1131cf33ee",
 }
 
 ARTIST_JSON = {
@@ -356,3 +366,12 @@ class TestAnnotation:
         assert a.entity == "c94a690b-db5a-4890-bd47-8ca9d0fd07ba"
         assert a.name == "Beethoven: Symphony No. 2"
         assert "Beethoven" in a.text
+
+
+class TestCollection:
+    def test_deserialize(self) -> None:
+        c = Collection.model_validate(COLLECTION_JSON)
+        assert c.name == "My Releases"
+        assert c.editor == "testuser"
+        assert c.entity_type == "release"
+        assert c.type == "Release collection"
