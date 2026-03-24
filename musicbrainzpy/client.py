@@ -459,12 +459,13 @@ class MusicBrainzClient:
             entity_type, linked_type=linked_type, linked_id=linked_id, limit=limit, offset=offset, includes=includes
         )
         items = [model_class.model_validate(item) for item in data.get(list_key, [])]
-        # Browse uses <list_key_singular>-count and <list_key_singular>-offset
+        # ws/2 prefixes: "recording-count", "recording-offset"
+        # ws/3 will use plain "count", "offset" (MBS-9731)
         singular = entity_type
         return BrowseResult(
             items=items,
-            count=data.get(f"{singular}-count", 0),
-            offset=data.get(f"{singular}-offset", 0),
+            count=data.get("count", data.get(f"{singular}-count", 0)),
+            offset=data.get("offset", data.get(f"{singular}-offset", 0)),
         )
 
     # --- Non-MBID lookups ---

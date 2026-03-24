@@ -186,8 +186,8 @@ class SyncMusicBrainzClient:
         singular = entity_type
         return BrowseResult(
             items=items,
-            count=data.get(f"{singular}-count", 0),
-            offset=data.get(f"{singular}-offset", 0),
+            count=data.get("count", data.get(f"{singular}-count", 0)),
+            offset=data.get("offset", data.get(f"{singular}-offset", 0)),
         )
 
     # --- Non-MBID lookups ---
