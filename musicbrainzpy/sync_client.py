@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from musicbrainzpy._ratelimit import SyncRateLimiter
+from musicbrainzpy._retry import DEFAULT_BASE_DELAY, DEFAULT_MAX_RETRIES, sync_retry
 from musicbrainzpy.auth import make_digest_auth
 from musicbrainzpy.client import (
     DEFAULT_BASE_URL,
@@ -37,17 +38,22 @@ class SyncMusicBrainzClient:
         *,
         base_url: str = DEFAULT_BASE_URL,
         rate_limit: float = 1.0,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+        retry_base_delay: float = DEFAULT_BASE_DELAY,
         username: str | None = None,
         password: str | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/") + "/"
         self._rate_limiter = SyncRateLimiter(interval=rate_limit)
+        self._max_retries = max_retries
+        self._retry_base_delay = retry_base_delay
         self._digest_auth = make_digest_auth(username, password) if username and password else None
         self._client = httpx.Client(
             headers={
                 "User-Agent": _build_user_agent(app_name, app_version, app_contact),
                 "Accept": "application/json",
             },
+            follow_redirects=True,
         )
 
     def close(self) -> None:
@@ -62,12 +68,16 @@ class SyncMusicBrainzClient:
 
     def _get(self, path: str, params: Mapping[str, str | list[str]] | None = None) -> dict[str, Any]:
         """Perform a rate-limited GET request and return parsed JSON."""
-        self._rate_limiter.acquire()
-        url = self._base_url + path
-        auth = self._digest_auth if self._digest_auth else None
-        response = self._client.get(url, params=params, auth=auth)
-        _raise_for_status(response)
-        return response.json()
+
+        def _do() -> dict[str, Any]:
+            self._rate_limiter.acquire()
+            url = self._base_url + path
+            auth = self._digest_auth if self._digest_auth else None
+            response = self._client.get(url, params=params, auth=auth)
+            _raise_for_status(response)
+            return response.json()
+
+        return sync_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     def _get_authenticated(self, path: str, params: Mapping[str, str | list[str]] | None = None) -> dict[str, Any]:
         """Perform a rate-limited authenticated GET request.
@@ -77,11 +87,15 @@ class SyncMusicBrainzClient:
         """
         if not self._digest_auth:
             raise AuthenticationError("Authentication required. Provide username/password.")
-        self._rate_limiter.acquire()
-        url = self._base_url + path
-        response = self._client.get(url, params=params, auth=self._digest_auth)
-        _raise_for_status(response)
-        return response.json()
+
+        def _do() -> dict[str, Any]:
+            self._rate_limiter.acquire()
+            url = self._base_url + path
+            response = self._client.get(url, params=params, auth=self._digest_auth)
+            _raise_for_status(response)
+            return response.json()
+
+        return sync_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     # --- Raw methods ---
 

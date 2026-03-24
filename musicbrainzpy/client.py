@@ -6,6 +6,7 @@ Handles rate limiting, User-Agent, and error mapping.
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -13,6 +14,7 @@ from typing import Any
 import httpx
 
 from musicbrainzpy._ratelimit import RateLimiter
+from musicbrainzpy._retry import DEFAULT_BASE_DELAY, DEFAULT_MAX_RETRIES, async_retry
 from musicbrainzpy._xml import build_barcode_xml, build_isrc_xml, build_rating_xml, build_tag_xml
 from musicbrainzpy.auth import OAuthHandler, make_digest_auth
 from musicbrainzpy.exceptions import (
@@ -48,6 +50,7 @@ _STATUS_EXCEPTIONS: dict[int, type[MusicBrainzError]] = {
     400: InvalidRequestError,
     401: AuthenticationError,
     404: NotFoundError,
+    429: RateLimitedError,
     503: RateLimitedError,
 }
 
@@ -85,7 +88,14 @@ def _raise_for_status(response: httpx.Response) -> None:
     if response.is_success:
         return
     exc_class = _STATUS_EXCEPTIONS.get(response.status_code, MusicBrainzError)
-    raise exc_class(f"HTTP {response.status_code}: {response.text}")
+    msg = f"HTTP {response.status_code}: {response.text}"
+    if exc_class is RateLimitedError:
+        retry_after: float | None = None
+        if raw := response.headers.get("Retry-After"):
+            with contextlib.suppress(ValueError):
+                retry_after = float(raw)
+        raise RateLimitedError(msg, retry_after=retry_after)
+    raise exc_class(msg)
 
 
 def _get_entity_info(entity_type: str) -> tuple[type[MBModel], str]:
@@ -128,6 +138,8 @@ class MusicBrainzClient:
         app_contact: Contact URL or email for User-Agent.
         base_url: API base URL. Defaults to the official endpoint.
         rate_limit: Minimum seconds between requests. Set to 0 to disable.
+        max_retries: Maximum retries on transient failures. Set to 0 to disable.
+        retry_base_delay: Base delay in seconds for exponential backoff.
         username: MusicBrainz username for digest auth.
         password: MusicBrainz password for digest auth.
         oauth: An :class:`~musicbrainzpy.auth.OAuthHandler` for OAuth2 auth.
@@ -141,12 +153,16 @@ class MusicBrainzClient:
         *,
         base_url: str = DEFAULT_BASE_URL,
         rate_limit: float = 1.0,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+        retry_base_delay: float = DEFAULT_BASE_DELAY,
         username: str | None = None,
         password: str | None = None,
         oauth: OAuthHandler | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/") + "/"
         self._rate_limiter = RateLimiter(interval=rate_limit)
+        self._max_retries = max_retries
+        self._retry_base_delay = retry_base_delay
         self._digest_auth = make_digest_auth(username, password) if username and password else None
         self._oauth = oauth
         self._client = httpx.AsyncClient(
@@ -154,6 +170,7 @@ class MusicBrainzClient:
                 "User-Agent": _build_user_agent(app_name, app_version, app_contact),
                 "Accept": "application/json",
             },
+            follow_redirects=True,
         )
 
     async def close(self) -> None:
@@ -201,11 +218,15 @@ class MusicBrainzClient:
         Sends authentication credentials if configured.
         """
         auth_kwargs = await self._get_optional_auth_kwargs()
-        await self._rate_limiter.acquire()
-        url = self._base_url + path
-        response = await self._client.get(url, params=params, **auth_kwargs)
-        _raise_for_status(response)
-        return response.json()
+
+        async def _do() -> dict[str, Any]:
+            await self._rate_limiter.acquire()
+            url = self._base_url + path
+            response = await self._client.get(url, params=params, **auth_kwargs)
+            _raise_for_status(response)
+            return response.json()
+
+        return await async_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     async def _post(self, path: str, *, params: dict[str, str], body: str) -> None:
         """Perform a rate-limited authenticated POST with XML body.
@@ -219,20 +240,23 @@ class MusicBrainzClient:
             AuthenticationError: If no credentials were provided.
         """
         auth_kwargs = await self._get_auth_kwargs()
-        await self._rate_limiter.acquire()
-        url = self._base_url + path
-        headers: dict[str, str] = {"Content-Type": "application/xml; charset=utf-8"}
-        # Merge bearer token header if using OAuth2
-        if "headers" in auth_kwargs:
-            headers.update(auth_kwargs["headers"])
-        response = await self._client.post(
-            url,
-            params=params,
-            content=body,
-            headers=headers,
-            auth=auth_kwargs.get("auth"),  # type: ignore[arg-type]
-        )
-        _raise_for_status(response)
+
+        async def _do() -> None:
+            await self._rate_limiter.acquire()
+            url = self._base_url + path
+            headers: dict[str, str] = {"Content-Type": "application/xml; charset=utf-8"}
+            if "headers" in auth_kwargs:
+                headers.update(auth_kwargs["headers"])
+            response = await self._client.post(
+                url,
+                params=params,
+                content=body,
+                headers=headers,
+                auth=auth_kwargs.get("auth"),  # type: ignore[arg-type]
+            )
+            _raise_for_status(response)
+
+        await async_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     async def _put(self, path: str, *, params: dict[str, str]) -> None:
         """Perform a rate-limited authenticated PUT (for collections).
@@ -245,10 +269,14 @@ class MusicBrainzClient:
             AuthenticationError: If no credentials were provided.
         """
         auth_kwargs = await self._get_auth_kwargs()
-        await self._rate_limiter.acquire()
-        url = self._base_url + path
-        response = await self._client.put(url, params=params, **auth_kwargs)
-        _raise_for_status(response)
+
+        async def _do() -> None:
+            await self._rate_limiter.acquire()
+            url = self._base_url + path
+            response = await self._client.put(url, params=params, **auth_kwargs)
+            _raise_for_status(response)
+
+        await async_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     async def _delete(self, path: str, *, params: dict[str, str]) -> None:
         """Perform a rate-limited authenticated DELETE (for collections).
@@ -261,10 +289,14 @@ class MusicBrainzClient:
             AuthenticationError: If no credentials were provided.
         """
         auth_kwargs = await self._get_auth_kwargs()
-        await self._rate_limiter.acquire()
-        url = self._base_url + path
-        response = await self._client.delete(url, params=params, **auth_kwargs)
-        _raise_for_status(response)
+
+        async def _do() -> None:
+            await self._rate_limiter.acquire()
+            url = self._base_url + path
+            response = await self._client.delete(url, params=params, **auth_kwargs)
+            _raise_for_status(response)
+
+        await async_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     async def lookup(self, entity_type: str, mbid: str, includes: list[str] | None = None) -> dict[str, Any]:
         """Look up a single entity by MBID.
@@ -475,12 +507,16 @@ class MusicBrainzClient:
             AuthenticationError: If no credentials were configured.
         """
         auth_kwargs = await self._get_auth_kwargs()
-        await self._rate_limiter.acquire()
-        url = self._base_url + "collection"
-        response = await self._client.get(url, **auth_kwargs)
-        _raise_for_status(response)
-        data = response.json()
-        return [Collection.model_validate(c) for c in data.get("collections", [])]
+
+        async def _do() -> list[Collection]:
+            await self._rate_limiter.acquire()
+            url = self._base_url + "collection"
+            response = await self._client.get(url, **auth_kwargs)
+            _raise_for_status(response)
+            data = response.json()
+            return [Collection.model_validate(c) for c in data.get("collections", [])]
+
+        return await async_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     # --- Submissions (require auth) ---
 

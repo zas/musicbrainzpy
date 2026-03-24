@@ -10,6 +10,7 @@ from typing import Literal
 
 import httpx
 
+from musicbrainzpy._retry import DEFAULT_BASE_DELAY, DEFAULT_MAX_RETRIES, async_retry, sync_retry
 from musicbrainzpy.client import _build_user_agent, _raise_for_status
 from musicbrainzpy.models.coverart import CoverArtImageList
 
@@ -41,8 +42,12 @@ class CoverArtClient:
         app_contact: str,
         *,
         base_url: str = DEFAULT_CAA_BASE_URL,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+        retry_base_delay: float = DEFAULT_BASE_DELAY,
     ) -> None:
         self._base_url = base_url.rstrip("/") + "/"
+        self._max_retries = max_retries
+        self._retry_base_delay = retry_base_delay
         self._client = httpx.AsyncClient(
             headers={"User-Agent": _build_user_agent(app_name, app_version, app_contact)},
             follow_redirects=True,
@@ -60,21 +65,33 @@ class CoverArtClient:
 
     async def _get_json(self, path: str) -> dict:
         """GET a JSON response."""
-        response = await self._client.get(self._base_url + path, headers={"Accept": "application/json"})
-        _raise_for_status(response)
-        return response.json()
+
+        async def _do() -> dict:
+            response = await self._client.get(self._base_url + path, headers={"Accept": "application/json"})
+            _raise_for_status(response)
+            return response.json()
+
+        return await async_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     async def _get_bytes(self, path: str) -> bytes:
         """GET binary image data."""
-        response = await self._client.get(self._base_url + path)
-        _raise_for_status(response)
-        return response.content
+
+        async def _do() -> bytes:
+            response = await self._client.get(self._base_url + path)
+            _raise_for_status(response)
+            return response.content
+
+        return await async_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     async def _head(self, url: str) -> httpx.Response:
         """HEAD request (follows redirects)."""
-        response = await self._client.head(url)
-        _raise_for_status(response)
-        return response
+
+        async def _do() -> httpx.Response:
+            response = await self._client.head(url)
+            _raise_for_status(response)
+            return response
+
+        return await async_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     # --- JSON listings ---
 
@@ -178,8 +195,12 @@ class SyncCoverArtClient:
         app_contact: str,
         *,
         base_url: str = DEFAULT_CAA_BASE_URL,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+        retry_base_delay: float = DEFAULT_BASE_DELAY,
     ) -> None:
         self._base_url = base_url.rstrip("/") + "/"
+        self._max_retries = max_retries
+        self._retry_base_delay = retry_base_delay
         self._client = httpx.Client(
             headers={"User-Agent": _build_user_agent(app_name, app_version, app_contact)},
             follow_redirects=True,
@@ -197,21 +218,33 @@ class SyncCoverArtClient:
 
     def _get_json(self, path: str) -> dict:
         """GET a JSON response."""
-        response = self._client.get(self._base_url + path, headers={"Accept": "application/json"})
-        _raise_for_status(response)
-        return response.json()
+
+        def _do() -> dict:
+            response = self._client.get(self._base_url + path, headers={"Accept": "application/json"})
+            _raise_for_status(response)
+            return response.json()
+
+        return sync_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     def _get_bytes(self, path: str) -> bytes:
         """GET binary image data."""
-        response = self._client.get(self._base_url + path)
-        _raise_for_status(response)
-        return response.content
+
+        def _do() -> bytes:
+            response = self._client.get(self._base_url + path)
+            _raise_for_status(response)
+            return response.content
+
+        return sync_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     def _head(self, url: str) -> httpx.Response:
         """HEAD request (follows redirects)."""
-        response = self._client.head(url)
-        _raise_for_status(response)
-        return response
+
+        def _do() -> httpx.Response:
+            response = self._client.head(url)
+            _raise_for_status(response)
+            return response
+
+        return sync_retry(_do, max_retries=self._max_retries, base_delay=self._retry_base_delay)
 
     def get_image_list(self, release_id: str) -> CoverArtImageList:
         """Get the list of cover art for a release. See :meth:`CoverArtClient.get_image_list`."""
