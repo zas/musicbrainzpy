@@ -2,13 +2,22 @@
 
 from __future__ import annotations
 
+import logging
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
+
+logger = logging.getLogger("musicbrainzpy")
 
 
 class MBModel(BaseModel):
     """Base model for all MusicBrainz entities. Allows extra fields for forward compatibility."""
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.model_extra:
+            logger.debug("Unmapped fields on %s: %s", type(self).__name__, list(self.model_extra.keys()))
 
 
 class LifeSpan(MBModel):
