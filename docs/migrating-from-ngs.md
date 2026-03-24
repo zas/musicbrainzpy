@@ -87,11 +87,15 @@ client = SyncMusicBrainzClient("myapp", "1.0", "me@example.com", rate_limit=2.0)
 # musicbrainzngs
 musicbrainzngs.auth("user", "pass")
 
-# musicbrainzpy — digest auth (async client only for submissions)
+# musicbrainzpy — digest auth
+client = SyncMusicBrainzClient("myapp", "1.0", "me@example.com",
+                                username="user", password="pass")
+
+# musicbrainzpy — digest auth (async)
 client = MusicBrainzClient("myapp", "1.0", "me@example.com",
                            username="user", password="pass")
 
-# musicbrainzpy — OAuth2 (recommended)
+# musicbrainzpy — OAuth2 (async, recommended)
 from musicbrainzpy import OAuthHandler
 oauth = OAuthHandler("client-id", "client-secret", "http://localhost:8080/callback")
 await oauth.exchange_code("authorization-code")
@@ -234,10 +238,19 @@ Key differences:
 
 ```python
 # musicbrainzngs
+musicbrainzngs.get_collections()
+releases = musicbrainzngs.get_releases_in_collection(collection_mbid, limit=100)
+
 musicbrainzngs.add_releases_to_collection(collection_mbid, [release_mbid])
 musicbrainzngs.remove_releases_from_collection(collection_mbid, [release_mbid])
 
-# musicbrainzpy (async) — supports any entity type, not just releases
+# musicbrainzpy — get_collections (requires auth)
+collections = client.get_collections()  # list[Collection]
+
+# musicbrainzpy — browse collection contents (any entity type)
+result = client.browse_typed("release", linked_type="collection", linked_id=collection_mbid, limit=100)
+
+# musicbrainzpy — add/remove (async, requires auth, supports any entity type)
 await client.collection_add("myapp-1.0", collection_mbid, "releases", [release_mbid])
 await client.collection_remove("myapp-1.0", collection_mbid, "releases", [release_mbid])
 ```
@@ -274,7 +287,6 @@ except MusicBrainzError as e:
 ## Features not yet in musicbrainzpy
 
 - **Cover Art Archive** — `get_image`, `get_image_front`, `get_image_back`, `get_image_list`, `get_release_group_image_list`, `get_release_group_image_front`
-- **`get_collections`** / **`get_releases_in_collection`** — browsing collection contents
 - **Custom response parsers** — `set_parser()`, `set_format()`
 
 ## Quick reference
@@ -325,3 +337,5 @@ except MusicBrainzError as e:
 | `submit_isrcs({id: [isrc]})` | `await client.submit_isrcs(client_id, {id: [isrc]})` |
 | `add_releases_to_collection(coll, ids)` | `await client.collection_add(client_id, coll, "releases", ids)` |
 | `remove_releases_from_collection(coll, ids)` | `await client.collection_remove(client_id, coll, "releases", ids)` |
+| `get_collections()` | `client.get_collections()` |
+| `get_releases_in_collection(coll, limit)` | `client.browse_typed("release", linked_type="collection", linked_id=coll, limit=limit)` |

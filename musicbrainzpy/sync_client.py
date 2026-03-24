@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from musicbrainzpy._ratelimit import SyncRateLimiter
+from musicbrainzpy.auth import make_digest_auth
 from musicbrainzpy.client import (
     DEFAULT_BASE_URL,
     BrowseResult,
@@ -16,7 +17,8 @@ from musicbrainzpy.client import (
     _get_entity_info,
     _raise_for_status,
 )
-from musicbrainzpy.models import MBModel, Recording, Release, Work
+from musicbrainzpy.exceptions import AuthenticationError
+from musicbrainzpy.models import Collection, MBModel, Recording, Release, Work
 
 
 class SyncMusicBrainzClient:
@@ -35,9 +37,12 @@ class SyncMusicBrainzClient:
         *,
         base_url: str = DEFAULT_BASE_URL,
         rate_limit: float = 1.0,
+        username: str | None = None,
+        password: str | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/") + "/"
         self._rate_limiter = SyncRateLimiter(interval=rate_limit)
+        self._digest_auth = make_digest_auth(username, password) if username and password else None
         self._client = httpx.Client(
             headers={
                 "User-Agent": _build_user_agent(app_name, app_version, app_contact),
@@ -59,7 +64,22 @@ class SyncMusicBrainzClient:
         """Perform a rate-limited GET request and return parsed JSON."""
         self._rate_limiter.acquire()
         url = self._base_url + path
-        response = self._client.get(url, params=params)
+        auth = self._digest_auth if self._digest_auth else None
+        response = self._client.get(url, params=params, auth=auth)
+        _raise_for_status(response)
+        return response.json()
+
+    def _get_authenticated(self, path: str, params: Mapping[str, str | list[str]] | None = None) -> dict[str, Any]:
+        """Perform a rate-limited authenticated GET request.
+
+        Raises:
+            AuthenticationError: If no credentials were configured.
+        """
+        if not self._digest_auth:
+            raise AuthenticationError("Authentication required. Provide username/password.")
+        self._rate_limiter.acquire()
+        url = self._base_url + path
+        response = self._client.get(url, params=params, auth=self._digest_auth)
         _raise_for_status(response)
         return response.json()
 
@@ -183,3 +203,10 @@ class SyncMusicBrainzClient:
         """Look up URL entities. See :meth:`MusicBrainzClient.lookup_by_url`."""
         params: dict[str, str | list[str]] = {"resource": list(urls)} if len(urls) > 1 else {"resource": urls[0]}
         return self._get("url", params)
+
+    # --- Collections ---
+
+    def get_collections(self) -> list[Collection]:
+        """List the authenticated user's collections. See :meth:`MusicBrainzClient.get_collections`."""
+        data = self._get_authenticated("collection")
+        return [Collection.model_validate(c) for c in data.get("collections", [])]

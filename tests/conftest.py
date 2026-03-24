@@ -95,6 +95,21 @@ ANNOTATION_SEARCH_RESPONSE = {
     ],
 }
 
+COLLECTION_LIST_RESPONSE = {
+    "collection-count": 1,
+    "collection-offset": 0,
+    "collections": [
+        {
+            "id": "005b5c07-cd88-32a4-805e-1d358ef1cfa3",
+            "name": "My Releases",
+            "editor": "testuser",
+            "entity-type": "release",
+            "type": "Release collection",
+            "type-id": "d94659b2-4ce5-3a98-b4b8-da1131cf33ee",
+        }
+    ],
+}
+
 
 @pytest.fixture
 def client() -> MusicBrainzClient:

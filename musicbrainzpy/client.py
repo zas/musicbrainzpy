@@ -26,6 +26,7 @@ from musicbrainzpy.models import (
     Annotation,
     Area,
     Artist,
+    Collection,
     Event,
     GenreFull,
     Instrument,
@@ -56,6 +57,7 @@ _ENTITY_MAP: dict[str, tuple[type[MBModel], str]] = {
     "annotation": (Annotation, "annotations"),
     "area": (Area, "areas"),
     "artist": (Artist, "artists"),
+    "collection": (Collection, "collections"),
     "event": (Event, "events"),
     "genre": (GenreFull, "genres"),
     "instrument": (Instrument, "instruments"),
@@ -463,6 +465,22 @@ class MusicBrainzClient:
         """
         params: dict[str, str | list[str]] = {"resource": list(urls)} if len(urls) > 1 else {"resource": urls[0]}
         return await self._get("url", params)
+
+    # --- Collections ---
+
+    async def get_collections(self) -> list[Collection]:
+        """List the authenticated user's collections.
+
+        Raises:
+            AuthenticationError: If no credentials were configured.
+        """
+        auth_kwargs = await self._get_auth_kwargs()
+        await self._rate_limiter.acquire()
+        url = self._base_url + "collection"
+        response = await self._client.get(url, **auth_kwargs)
+        _raise_for_status(response)
+        data = response.json()
+        return [Collection.model_validate(c) for c in data.get("collections", [])]
 
     # --- Submissions (require auth) ---
 
