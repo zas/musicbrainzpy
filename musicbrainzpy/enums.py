@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import Enum
 
 
-class EntityType(StrEnum):
+class _StrEnum(str, Enum):
+    """str-valued enum compatible with Python 3.10+."""
+
+
+class EntityType(_StrEnum):
     """Core MusicBrainz entity types."""
 
     AREA = "area"
@@ -23,7 +27,7 @@ class EntityType(StrEnum):
     URL = "url"
 
 
-class ReleaseStatus(StrEnum):
+class ReleaseStatus(_StrEnum):
     OFFICIAL = "official"
     PROMOTION = "promotion"
     BOOTLEG = "bootleg"
@@ -32,7 +36,7 @@ class ReleaseStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
-class ReleaseGroupType(StrEnum):
+class ReleaseGroupType(_StrEnum):
     ALBUM = "album"
     SINGLE = "single"
     EP = "ep"
@@ -40,7 +44,7 @@ class ReleaseGroupType(StrEnum):
     OTHER = "other"
 
 
-class ReleaseGroupSecondaryType(StrEnum):
+class ReleaseGroupSecondaryType(_StrEnum):
     AUDIO_DRAMA = "audio drama"
     AUDIOBOOK = "audiobook"
     COMPILATION = "compilation"
@@ -55,7 +59,7 @@ class ReleaseGroupSecondaryType(StrEnum):
     SPOKENWORD = "spokenword"
 
 
-class OAuthScope(StrEnum):
+class OAuthScope(_StrEnum):
     """OAuth2 scopes for MusicBrainz API authorization."""
 
     PROFILE = "profile"

@@ -10,7 +10,7 @@ import contextlib
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 import httpx
 
@@ -110,20 +110,23 @@ def _get_entity_info(entity_type: str) -> tuple[type[MBModel], str]:
         raise ValueError(f"Unknown entity type: {entity_type!r}") from None
 
 
+_T = TypeVar("_T", bound=MBModel)
+
+
 @dataclass
-class SearchResult[T: MBModel]:
+class SearchResult(Generic[_T]):
     """Wrapper for search responses."""
 
-    items: list[T]
+    items: list[_T]
     count: int
     offset: int
 
 
 @dataclass
-class BrowseResult[T: MBModel]:
+class BrowseResult(Generic[_T]):
     """Wrapper for browse responses."""
 
-    items: list[T]
+    items: list[_T]
     count: int
     offset: int
 
