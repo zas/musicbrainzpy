@@ -13,6 +13,17 @@ All requests set the `Accept: application/json` header.
 - Max 1 request/second per client
 - Must set a meaningful `User-Agent` header: `AppName/Version ( contact-url-or-email )`
 - Violators get IP-blocked
+- Server returns HTTP 503 (or 429) when rate limit is exceeded
+
+## Retry Behavior
+
+All clients automatically retry on transient failures:
+
+- **Retried**: `httpx.TransportError` (connection errors, timeouts), HTTP 429, HTTP 503
+- **Not retried**: HTTP 400, 401, 404, or any other client/server error
+- **Default**: 3 retries with exponential backoff (1s, 2s, 4s)
+- **Retry-After**: respected when the server includes the header
+- **Configuration**: `max_retries=` and `retry_base_delay=` constructor params; set `max_retries=0` to disable
 
 ## Lookup
 
@@ -124,3 +135,32 @@ Annotations use MusicBrainz wiki markup. The `annotation` module provides conver
 - `annotation_to_markdown(markup)` — convert to Markdown
 
 See https://musicbrainz.org/doc/Annotation#Wiki_formatting for the markup spec.
+
+## Cover Art Archive
+
+Separate API at `https://coverartarchive.org/`. No authentication or rate limiting required.
+
+| Endpoint | Returns |
+|---|---|
+| `GET /release/<mbid>/` | JSON image listing |
+| `GET /release-group/<mbid>/` | JSON image listing |
+| `GET /release/<mbid>/front` | Front cover image (binary), 307 redirect to archive.org |
+| `GET /release/<mbid>/back` | Back cover image (binary) |
+| `GET /release/<mbid>/<image_id>` | Specific image (binary) |
+
+Thumbnail sizes: append `-250`, `-500`, or `-1200` to the image path (e.g. `/release/<mbid>/front-500`).
+
+Use `HEAD` requests to get `Content-Type` and `Content-Length` without downloading the image.
+
+## Environment Variables
+
+Client defaults can be set via environment variables. Explicit constructor arguments always take precedence.
+
+| Variable | Overrides |
+|---|---|
+| `MUSICBRAINZPY_APP` | `app_name` |
+| `MUSICBRAINZPY_VERSION` | `app_version` |
+| `MUSICBRAINZPY_CONTACT` | `app_contact` |
+| `MUSICBRAINZPY_BASE_URL` | `base_url` |
+| `MUSICBRAINZPY_USERNAME` | `username` |
+| `MUSICBRAINZPY_PASSWORD` | `password` |

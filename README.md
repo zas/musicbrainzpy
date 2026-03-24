@@ -107,6 +107,52 @@ plain = annotation_to_text(artist.annotation)
 md = annotation_to_markdown(artist.annotation)
 ```
 
+### Cover Art Archive
+
+```python
+from musicbrainzpy import SyncCoverArtClient
+
+with SyncCoverArtClient("myapp", "1.0", "me@example.com") as caa:
+    # List images for a release
+    image_list = caa.get_image_list(release_mbid)
+    for img in image_list.images:
+        print(f"  {img.id}: {img.types} ({img.front=})")
+
+    # Download front cover (full-size or thumbnail)
+    data = caa.get_front(release_mbid)
+    data = caa.get_front(release_mbid, size=500)  # 250, 500, or 1200
+
+    # Get image metadata without downloading
+    info = caa.image_info(release_mbid, "front")
+    print(f"  {info['content_type']}, {info['content_length']} bytes")
+```
+
+Async version: `CoverArtClient` with the same methods (all `await`-able).
+
+### Environment variables
+
+Client defaults can be set via environment variables (explicit constructor args always win):
+
+| Variable | Overrides |
+|---|---|
+| `MUSICBRAINZPY_APP` | `app_name` |
+| `MUSICBRAINZPY_VERSION` | `app_version` |
+| `MUSICBRAINZPY_CONTACT` | `app_contact` |
+| `MUSICBRAINZPY_BASE_URL` | `base_url` |
+| `MUSICBRAINZPY_USERNAME` | `username` |
+| `MUSICBRAINZPY_PASSWORD` | `password` |
+
+```bash
+export MUSICBRAINZPY_APP=myapp
+export MUSICBRAINZPY_VERSION=1.0
+export MUSICBRAINZPY_CONTACT=me@example.com
+```
+
+```python
+# No args needed when env vars are set
+client = SyncMusicBrainzClient()
+```
+
 See [docs/oauth2.md](docs/oauth2.md) for the full OAuth2 guide with PKCE, token refresh, and examples.
 
 Coming from **musicbrainzngs**? See the [migration guide](docs/migrating-from-ngs.md).
