@@ -7,6 +7,7 @@ Handles rate limiting, User-Agent, and error mapping.
 from __future__ import annotations
 
 import contextlib
+import os
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -44,6 +45,9 @@ from musicbrainzpy.models import (
 )
 
 DEFAULT_BASE_URL = "https://musicbrainz.org/ws/2/"
+
+#: Environment variable prefix for configuration overrides.
+_ENV_PREFIX = "MUSICBRAINZPY_"
 
 #: Maps HTTP status codes to exception classes.
 _STATUS_EXCEPTIONS: dict[int, type[MusicBrainzError]] = {
@@ -133,25 +137,25 @@ class MusicBrainzClient:
     - **OAuth2**: pass an :class:`~musicbrainzpy.auth.OAuthHandler` instance.
 
     Args:
-        app_name: Application name for User-Agent.
-        app_version: Application version for User-Agent.
-        app_contact: Contact URL or email for User-Agent.
-        base_url: API base URL. Defaults to the official endpoint.
+        app_name: Application name for User-Agent. Falls back to ``MUSICBRAINZPY_APP``.
+        app_version: Application version for User-Agent. Falls back to ``MUSICBRAINZPY_VERSION``.
+        app_contact: Contact URL or email for User-Agent. Falls back to ``MUSICBRAINZPY_CONTACT``.
+        base_url: API base URL. Falls back to ``MUSICBRAINZPY_BASE_URL``, then the official endpoint.
         rate_limit: Minimum seconds between requests. Set to 0 to disable.
         max_retries: Maximum retries on transient failures. Set to 0 to disable.
         retry_base_delay: Base delay in seconds for exponential backoff.
-        username: MusicBrainz username for digest auth.
-        password: MusicBrainz password for digest auth.
+        username: MusicBrainz username for digest auth. Falls back to ``MUSICBRAINZPY_USERNAME``.
+        password: MusicBrainz password for digest auth. Falls back to ``MUSICBRAINZPY_PASSWORD``.
         oauth: An :class:`~musicbrainzpy.auth.OAuthHandler` for OAuth2 auth.
     """
 
     def __init__(
         self,
-        app_name: str,
-        app_version: str,
-        app_contact: str,
+        app_name: str | None = None,
+        app_version: str | None = None,
+        app_contact: str | None = None,
         *,
-        base_url: str = DEFAULT_BASE_URL,
+        base_url: str | None = None,
         rate_limit: float = 1.0,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_base_delay: float = DEFAULT_BASE_DELAY,
@@ -159,15 +163,27 @@ class MusicBrainzClient:
         password: str | None = None,
         oauth: OAuthHandler | None = None,
     ) -> None:
-        self._base_url = base_url.rstrip("/") + "/"
+        _app = app_name or os.environ.get(f"{_ENV_PREFIX}APP")
+        _ver = app_version or os.environ.get(f"{_ENV_PREFIX}VERSION")
+        _contact = app_contact or os.environ.get(f"{_ENV_PREFIX}CONTACT")
+        if not (_app and _ver and _contact):
+            msg = (
+                "app_name, app_version, and app_contact are required "
+                "(pass them directly or set MUSICBRAINZPY_APP, MUSICBRAINZPY_VERSION, MUSICBRAINZPY_CONTACT)"
+            )
+            raise ValueError(msg)
+        _base = base_url or os.environ.get(f"{_ENV_PREFIX}BASE_URL") or DEFAULT_BASE_URL
+        _user = username or os.environ.get(f"{_ENV_PREFIX}USERNAME")
+        _pass = password or os.environ.get(f"{_ENV_PREFIX}PASSWORD")
+        self._base_url = _base.rstrip("/") + "/"
         self._rate_limiter = RateLimiter(interval=rate_limit)
         self._max_retries = max_retries
         self._retry_base_delay = retry_base_delay
-        self._digest_auth = make_digest_auth(username, password) if username and password else None
+        self._digest_auth = make_digest_auth(_user, _pass) if _user and _pass else None
         self._oauth = oauth
         self._client = httpx.AsyncClient(
             headers={
-                "User-Agent": _build_user_agent(app_name, app_version, app_contact),
+                "User-Agent": _build_user_agent(_app, _ver, _contact),
                 "Accept": "application/json",
             },
             follow_redirects=True,

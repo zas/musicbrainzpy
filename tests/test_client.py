@@ -104,6 +104,29 @@ class TestClientInit:
             assert c._client.is_closed is False
         assert c._client.is_closed is True
 
+    def test_missing_ua_raises(self) -> None:
+        with pytest.raises(ValueError, match="app_name, app_version, and app_contact are required"):
+            MusicBrainzClient()
+
+    def test_env_var_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MUSICBRAINZPY_APP", "envapp")
+        monkeypatch.setenv("MUSICBRAINZPY_VERSION", "2.0")
+        monkeypatch.setenv("MUSICBRAINZPY_CONTACT", "env@test.com")
+        c = MusicBrainzClient(rate_limit=0)
+        assert c._client.headers["user-agent"] == "envapp/2.0 ( env@test.com )"
+
+    def test_env_var_base_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MUSICBRAINZPY_BASE_URL", "https://mirror.example.com/ws/2")
+        c = MusicBrainzClient("a", "1", "x", rate_limit=0)
+        assert c._base_url == "https://mirror.example.com/ws/2/"
+
+    def test_explicit_args_override_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MUSICBRAINZPY_APP", "envapp")
+        monkeypatch.setenv("MUSICBRAINZPY_VERSION", "2.0")
+        monkeypatch.setenv("MUSICBRAINZPY_CONTACT", "env@test.com")
+        c = MusicBrainzClient("myapp", "1.0", "me@test.com", rate_limit=0)
+        assert c._client.headers["user-agent"] == "myapp/1.0 ( me@test.com )"
+
 
 class TestLookup:
     async def test_lookup_artist(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
