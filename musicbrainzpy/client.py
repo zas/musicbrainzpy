@@ -7,6 +7,7 @@ Handles rate limiting, User-Agent, and error mapping.
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -87,8 +88,17 @@ def _build_user_agent(app_name: str, app_version: str, app_contact: str) -> str:
     return f"{app_name}/{app_version} ( {app_contact} )"
 
 
+_logger = logging.getLogger("musicbrainzpy")
+
+
 def _raise_for_status(response: httpx.Response) -> None:
     """Raise a typed exception for non-2xx responses."""
+    try:
+        elapsed = response.elapsed.total_seconds()
+        path = response.request.url.path
+        _logger.debug("%s %s %d %.3fs", response.request.method, path, response.status_code, elapsed)
+    except RuntimeError:
+        pass
     if response.is_success:
         return
     exc_class = _STATUS_EXCEPTIONS.get(response.status_code, MusicBrainzError)
