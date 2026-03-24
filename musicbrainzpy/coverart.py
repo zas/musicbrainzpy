@@ -70,6 +70,12 @@ class CoverArtClient:
         _raise_for_status(response)
         return response.content
 
+    async def _head(self, url: str) -> httpx.Response:
+        """HEAD request (follows redirects)."""
+        response = await self._client.head(url)
+        _raise_for_status(response)
+        return response
+
     # --- JSON listings ---
 
     async def get_image_list(self, release_id: str) -> CoverArtImageList:
@@ -132,6 +138,28 @@ class CoverArtClient:
         """
         return await self.get_image(release_group_id, "front", size=size, entity_type="release-group")
 
+    async def image_info(
+        self,
+        mbid: str,
+        cover_id: str,
+        *,
+        size: ImageSize | None = None,
+        entity_type: str = "release",
+    ) -> dict[str, str | int | None]:
+        """Get metadata for an image via HEAD request (content-type, content-length).
+
+        Args:
+            mbid: MusicBrainz release or release group MBID.
+            cover_id: Image ID from the listing, or ``"front"``/``"back"``.
+            size: Thumbnail size (250, 500, 1200) or None for full-size.
+            entity_type: ``"release"`` or ``"release-group"``.
+        """
+        response = await self._head(self._base_url + _image_path(entity_type, mbid, cover_id, size))
+        return {
+            "content_type": response.headers.get("content-type"),
+            "content_length": int(cl) if (cl := response.headers.get("content-length")) else None,
+        }
+
 
 class SyncCoverArtClient:
     """Synchronous client for the Cover Art Archive.
@@ -179,6 +207,12 @@ class SyncCoverArtClient:
         _raise_for_status(response)
         return response.content
 
+    def _head(self, url: str) -> httpx.Response:
+        """HEAD request (follows redirects)."""
+        response = self._client.head(url)
+        _raise_for_status(response)
+        return response
+
     def get_image_list(self, release_id: str) -> CoverArtImageList:
         """Get the list of cover art for a release. See :meth:`CoverArtClient.get_image_list`."""
         data = self._get_json(f"release/{release_id}/")
@@ -206,3 +240,13 @@ class SyncCoverArtClient:
     def get_release_group_front(self, release_group_id: str, *, size: ImageSize | None = None) -> bytes:
         """Download the front cover art for a release group. See :meth:`CoverArtClient.get_release_group_front`."""
         return self.get_image(release_group_id, "front", size=size, entity_type="release-group")
+
+    def image_info(
+        self, mbid: str, cover_id: str, *, size: ImageSize | None = None, entity_type: str = "release"
+    ) -> dict[str, str | int | None]:
+        """Get metadata for an image via HEAD request. See :meth:`CoverArtClient.image_info`."""
+        response = self._head(self._base_url + _image_path(entity_type, mbid, cover_id, size))
+        return {
+            "content_type": response.headers.get("content-type"),
+            "content_length": int(cl) if (cl := response.headers.get("content-length")) else None,
+        }

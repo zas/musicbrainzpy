@@ -23,7 +23,7 @@ IMAGE_LIST_RESPONSE = {
             "image": f"http://coverartarchive.org/release/{RELEASE_MBID}/829521842.jpg",
             "comment": "",
             "approved": True,
-            "id": "829521842",
+            "id": 829521842,
             "thumbnails": {
                 "250": f"http://coverartarchive.org/release/{RELEASE_MBID}/829521842-250.jpg",
                 "500": f"http://coverartarchive.org/release/{RELEASE_MBID}/829521842-500.jpg",
@@ -59,7 +59,7 @@ class TestCoverArtModels:
         assert img.front is True
         assert img.back is False
         assert img.types == ["Front"]
-        assert img.id == "829521842"
+        assert img.id == 829521842
         assert img.thumbnails.t250 is not None
         assert img.thumbnails.t500 is not None
         assert img.thumbnails.t1200 is not None
