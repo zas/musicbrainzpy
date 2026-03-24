@@ -321,9 +321,7 @@ except MusicBrainzError as e:
     print(e)
 ```
 
-## Features not yet in musicbrainzpy
-
-- **Custom response parsers** — `set_parser()`, `set_format()`
+> **Note:** musicbrainzngs `set_parser()` and `set_format()` have no equivalent — musicbrainzpy always uses the JSON API natively and returns either Pydantic models (typed methods) or plain dicts (raw methods), so custom XML parsing is unnecessary.
 
 ## Quick reference
 
