@@ -119,6 +119,22 @@ URL_LOOKUP_WITH_RELS_RESPONSE = {
 }
 
 
+URL_LOOKUP_MULTI_RESPONSE = {
+    "url-count": 2,
+    "url-offset": 0,
+    "urls": [
+        {
+            "id": "8a0f1234-5678-4abc-9def-0123456789ab",
+            "resource": "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS",
+        },
+        {
+            "id": "9b1a2345-6789-4bcd-8ef0-123456789abc",
+            "resource": "https://www.deezer.com/artist/211965347",
+        },
+    ],
+}
+
+
 COLLECTION_LIST_RESPONSE = {
     "collection-count": 1,
     "collection-offset": 0,

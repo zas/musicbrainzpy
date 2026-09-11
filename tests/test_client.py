@@ -31,6 +31,7 @@ from tests.conftest import (
     ISRC_LOOKUP_RESPONSE,
     ISWC_LOOKUP_RESPONSE,
     RELEASE_BROWSE_RESPONSE,
+    URL_LOOKUP_MULTI_RESPONSE,
     URL_LOOKUP_RESPONSE,
     URL_LOOKUP_WITH_RELS_RESPONSE,
 )
@@ -319,10 +320,12 @@ class TestLookupByUrl:
         url1 = "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS"
         url2 = "https://www.deezer.com/artist/211965347"
         mock_api.get("/url", params={"resource": [url1, url2]}).mock(
-            return_value=httpx.Response(200, json=URL_LOOKUP_RESPONSE)
+            return_value=httpx.Response(200, json=URL_LOOKUP_MULTI_RESPONSE)
         )
         result = await client.lookup_by_url(url1, url2)
-        assert result["resource"] == url1
+        # Multiple resources return a paginated "urls" wrapper, not a single entity.
+        assert result["url-count"] == 2
+        assert {u["resource"] for u in result["urls"]} == {url1, url2}
 
 
 class TestAuth:
