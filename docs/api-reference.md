@@ -103,7 +103,7 @@ Search syntax documented at: https://musicbrainz.org/doc/MusicBrainz_API/Search
 | `/isrc/<isrc>`              | List of recordings | inc= same as recording lookup      |
 | `/iswc/<iswc>`              | List of works      | inc= same as work lookup           |
 | `/discid/<discid>?toc=<T>`  | List of releases   | Supports fuzzy TOC matching        |
-| `/url?resource=<url>`       | URL entity         | Up to 100 URLs per request         |
+| `/url?resource=<url>`       | URL entity         | Up to 100 URLs; `inc=<entity>-rels` resolves linked entities |
 
 ## Submissions (XML only, require auth)
 
