@@ -10,3 +10,4 @@ class Url(MBModel):
 
     id: str
     resource: str
+    relations: list[MBModel] | None = None

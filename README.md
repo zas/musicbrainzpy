@@ -106,6 +106,14 @@ recordings = await client.lookup_by_isrc("USEE10100063")
 works = await client.lookup_by_iswc("T-070.116.274-5")
 releases = await client.lookup_by_discid(discid, toc="1+12+267257+150")
 data = await client.lookup_by_url("https://www.metallica.com/")
+
+# Resolve which entity a URL belongs to (e.g. find an artist from their
+# Spotify/Discogs URL) by requesting relationship includes:
+data = await client.lookup_by_url(
+    "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS",
+    includes=["artist-rels"],
+)
+artist = data["relations"][0]["artist"]  # {"id": ..., "name": ...}
 ```
 
 ### Submissions (require authentication)

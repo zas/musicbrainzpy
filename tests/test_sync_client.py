@@ -9,7 +9,12 @@ import respx
 from musicbrainzpy.exceptions import AuthenticationError
 from musicbrainzpy.models import Artist, Collection
 from musicbrainzpy.sync_client import SyncMusicBrainzClient
-from tests.conftest import ARTIST_LOOKUP_RESPONSE, ARTIST_SEARCH_RESPONSE, COLLECTION_LIST_RESPONSE
+from tests.conftest import (
+    ARTIST_LOOKUP_RESPONSE,
+    ARTIST_SEARCH_RESPONSE,
+    COLLECTION_LIST_RESPONSE,
+    URL_LOOKUP_WITH_RELS_RESPONSE,
+)
 
 
 class TestSyncClient:
@@ -43,6 +48,16 @@ class TestSyncClient:
                 result = c.search_typed("artist", "Metallica")
                 assert result.count == 1
                 assert isinstance(result.items[0], Artist)
+
+    def test_lookup_by_url_with_includes(self) -> None:
+        url = "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS"
+        with respx.mock(base_url="https://musicbrainz.org/ws/2") as mock_api:
+            mock_api.get("/url", params={"resource": url, "inc": "artist-rels"}).mock(
+                return_value=httpx.Response(200, json=URL_LOOKUP_WITH_RELS_RESPONSE)
+            )
+            with SyncMusicBrainzClient("test", "0.1", "test@example.com", rate_limit=0) as c:
+                result = c.lookup_by_url(url, includes=["artist-rels"])
+                assert result["relations"][0]["artist"]["name"] == "Tajnic"
 
     def test_get_collections_with_auth(self) -> None:
         with respx.mock(base_url="https://musicbrainz.org/ws/2") as mock_api:
