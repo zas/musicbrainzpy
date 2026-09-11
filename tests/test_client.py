@@ -31,6 +31,8 @@ from tests.conftest import (
     ISRC_LOOKUP_RESPONSE,
     ISWC_LOOKUP_RESPONSE,
     RELEASE_BROWSE_RESPONSE,
+    URL_LOOKUP_RESPONSE,
+    URL_LOOKUP_WITH_RELS_RESPONSE,
 )
 
 # --- Helper tests ---
@@ -293,6 +295,34 @@ class TestLookupByDiscid:
         )
         results = await client.lookup_by_discid("-", toc="1+12+267257+150", cdstubs=False)
         assert len(results) == 1
+
+
+class TestLookupByUrl:
+    async def test_single_url(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        url = "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS"
+        mock_api.get("/url", params={"resource": url}).mock(return_value=httpx.Response(200, json=URL_LOOKUP_RESPONSE))
+        result = await client.lookup_by_url(url)
+        assert result["resource"] == url
+        assert result["id"] == "8a0f1234-5678-4abc-9def-0123456789ab"
+
+    async def test_with_includes_resolves_artist(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        url = "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS"
+        mock_api.get("/url", params={"resource": url, "inc": "artist-rels"}).mock(
+            return_value=httpx.Response(200, json=URL_LOOKUP_WITH_RELS_RESPONSE)
+        )
+        result = await client.lookup_by_url(url, includes=["artist-rels"])
+        relations = result["relations"]
+        assert relations[0]["artist"]["id"] == "0dbcca3c-e4e4-45db-b5c7-cd8ce1f48da8"
+        assert relations[0]["artist"]["name"] == "Tajnic"
+
+    async def test_multiple_urls(self, client: MusicBrainzClient, mock_api: respx.MockRouter) -> None:
+        url1 = "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS"
+        url2 = "https://www.deezer.com/artist/211965347"
+        mock_api.get("/url", params={"resource": [url1, url2]}).mock(
+            return_value=httpx.Response(200, json=URL_LOOKUP_RESPONSE)
+        )
+        result = await client.lookup_by_url(url1, url2)
+        assert result["resource"] == url1
 
 
 class TestAuth:

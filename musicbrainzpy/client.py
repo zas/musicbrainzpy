@@ -526,13 +526,18 @@ class MusicBrainzClient:
         data = await self._get(f"discid/{discid}", params)
         return [Release.model_validate(r) for r in data.get("releases", [])]
 
-    async def lookup_by_url(self, *urls: str) -> dict[str, Any]:
+    async def lookup_by_url(self, *urls: str, includes: list[str] | None = None) -> dict[str, Any]:
         """Look up URL entities by resource URL.
 
         Args:
             urls: One or more URLs to look up (max 100).
+            includes: Optional ``inc=`` subqueries. Use relationship includes such as
+                ``["artist-rels", "label-rels"]`` to resolve which entities a URL is
+                linked to (e.g. finding an artist from their Spotify/Discogs URL).
         """
         params: dict[str, str | list[str]] = {"resource": list(urls)} if len(urls) > 1 else {"resource": urls[0]}
+        if includes:
+            params["inc"] = "+".join(includes)
         return await self._get("url", params)
 
     # --- Collections ---

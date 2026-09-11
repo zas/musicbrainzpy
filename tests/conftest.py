@@ -95,6 +95,30 @@ ANNOTATION_SEARCH_RESPONSE = {
     ],
 }
 
+URL_LOOKUP_RESPONSE = {
+    "id": "8a0f1234-5678-4abc-9def-0123456789ab",
+    "resource": "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS",
+}
+
+URL_LOOKUP_WITH_RELS_RESPONSE = {
+    "id": "8a0f1234-5678-4abc-9def-0123456789ab",
+    "resource": "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS",
+    "relations": [
+        {
+            "type": "free streaming",
+            "type-id": "769085a1-c2f7-4c24-a532-2375a77693bd",
+            "direction": "backward",
+            "artist": {
+                "id": "0dbcca3c-e4e4-45db-b5c7-cd8ce1f48da8",
+                "name": "Tajnic",
+                "sort-name": "Tajnic",
+                "disambiguation": "Contemporary Jazz Band",
+            },
+        }
+    ],
+}
+
+
 COLLECTION_LIST_RESPONSE = {
     "collection-count": 1,
     "collection-offset": 0,

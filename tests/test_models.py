@@ -358,6 +358,27 @@ class TestUrl:
         u = Url.model_validate(URL_JSON)
         assert u.resource == "https://www.metallica.com/"
 
+    def test_deserialize_with_relations(self) -> None:
+        data = {
+            "id": "8a0f1234-5678-4abc-9def-0123456789ab",
+            "resource": "https://open.spotify.com/artist/5YEPudiLsVYgkZmABzsttS",
+            "relations": [
+                {
+                    "type": "free streaming",
+                    "direction": "backward",
+                    "artist": {
+                        "id": "0dbcca3c-e4e4-45db-b5c7-cd8ce1f48da8",
+                        "name": "Tajnic",
+                        "sort-name": "Tajnic",
+                    },
+                }
+            ],
+        }
+        u = Url.model_validate(data)
+        assert u.relations is not None
+        assert len(u.relations) == 1
+        assert u.relations[0].model_dump()["artist"]["id"] == "0dbcca3c-e4e4-45db-b5c7-cd8ce1f48da8"
+
 
 class TestAnnotation:
     def test_deserialize(self) -> None:

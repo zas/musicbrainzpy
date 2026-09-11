@@ -230,9 +230,11 @@ class SyncMusicBrainzClient:
         data = self._get(f"discid/{discid}", params)
         return [Release.model_validate(r) for r in data.get("releases", [])]
 
-    def lookup_by_url(self, *urls: str) -> dict[str, Any]:
+    def lookup_by_url(self, *urls: str, includes: list[str] | None = None) -> dict[str, Any]:
         """Look up URL entities. See :meth:`MusicBrainzClient.lookup_by_url`."""
         params: dict[str, str | list[str]] = {"resource": list(urls)} if len(urls) > 1 else {"resource": urls[0]}
+        if includes:
+            params["inc"] = "+".join(includes)
         return self._get("url", params)
 
     # --- Collections ---
